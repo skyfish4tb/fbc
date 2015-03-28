@@ -580,7 +580,7 @@ sub outp _
 
     static as string ostr
 
-	if( env.clopt.debug ) then
+	if( env.clopt.debuginfo ) then
 		ostr = TABCHAR
 		ostr += *s
 	else
@@ -1146,7 +1146,7 @@ private sub hCreateFrame _
     	if( (bytestoalloc <> 0) or _
     		(proc->proc.ext->stk.argofs <> EMIT_ARGSTART) or _
         	symbGetIsMainProc( proc ) or _
-        	env.clopt.debug or _
+			env.clopt.debuginfo or _
 			env.clopt.profile ) then
 
     		hPUSH( "ebp" )
@@ -1223,7 +1223,7 @@ private sub hDestroyFrame _
     	if( (bytestoalloc <> 0) or _
     		(proc->proc.ext->stk.argofs <> EMIT_ARGSTART) or _
         	symbGetIsMainProc( proc ) or _
-        	env.clopt.debug or _
+			env.clopt.debuginfo or _
 			env.clopt.profile ) then
     		outp( "mov esp, ebp" )
     		hPOP( "ebp" )

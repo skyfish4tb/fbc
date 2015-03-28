@@ -375,7 +375,7 @@ end sub
 private sub hWriteLine( byref s as string, byval noline as integer = FALSE )
 	static as string ln
 
-	if( env.clopt.debug and (noline = FALSE) ) then
+	if( env.clopt.debuginfo and (noline = FALSE) ) then
 		ln = "#line " + str( ctx.linenum )
 		ln += " """ + ctx.escapedinputfilename + """"
 		sectionWriteLine( ln )
@@ -1216,7 +1216,7 @@ private function _emitBegin( ) as integer
 	'' header
 	sectionBegin( )
 
-	if( env.clopt.debug ) then
+	if( env.clopt.debuginfo ) then
 		_emitDBG( AST_OP_DBG_LINEINI, NULL, 0 )
 	end if
 
@@ -3373,7 +3373,7 @@ private sub _emitProcBegin _
 
 	hWriteLine( "", TRUE )
 
-	if( env.clopt.debug ) then
+	if( env.clopt.debuginfo ) then
 		_emitDBG( AST_OP_DBG_LINEINI, proc, proc->proc.ext->dbg.iniline )
 	end if
 

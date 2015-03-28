@@ -712,7 +712,7 @@ private function hLinkFiles( ) as integer
 		ldcline += " -Map " + fbc.mapfile
 	end if
 
-	if( fbGetOption( FB_COMPOPT_DEBUG ) = FALSE ) then
+	if( fbGetOption( FB_COMPOPT_DEBUGINFO ) = FALSE ) then
 		if( fbGetOption( FB_COMPOPT_PROFILE ) = FALSE ) then
 			ldcline += " -s"
 		end if
@@ -961,7 +961,7 @@ private function hLinkFiles( ) as integer
 
 		cxbecline = "-TITLE:" + QUOTE + fbc.xbe_title + (QUOTE + " ")
 
-		if( fbGetOption( FB_COMPOPT_DEBUG ) ) then
+		if( fbGetOption( FB_COMPOPT_DEBUGINFO ) ) then
 			cxbecline += "-DUMPINFO:" + QUOTE + hStripExt(fbc.outname) + (".cxbe" + QUOTE)
 		end if
 
@@ -1542,7 +1542,7 @@ private sub handleOpt(byval optid as integer, byref arg as string)
 		fbSetOption( FB_COMPOPT_FPUTYPE, value )
 
 	case OPT_G
-		fbSetOption( FB_COMPOPT_DEBUG, TRUE )
+		fbSetOption( FB_COMPOPT_DEBUGINFO, TRUE )
 
 	case OPT_GEN
 		select case( lcase( arg ) )
@@ -2782,7 +2782,7 @@ private function hCompileStage2Module( byval module as FBCIOFILE ptr ) as intege
 		'' Avoid gcc exception handling bloat
 		ln += "-fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables "
 
-		if( fbGetOption( FB_COMPOPT_DEBUG ) ) then
+		if( fbGetOption( FB_COMPOPT_DEBUGINFO ) ) then
 			ln += "-g "
 		end if
 
@@ -2853,7 +2853,7 @@ private function hAssembleModule( byval module as FBCIOFILE ptr ) as integer
 		ln += "--64 "
 	end select
 
-	if( fbGetOption( FB_COMPOPT_DEBUG ) = FALSE ) then
+	if( fbGetOption( FB_COMPOPT_DEBUGINFO ) = FALSE ) then
 		ln += "--strip-local-absolute "
 	end if
 	ln += """" + hGetAsmName( module, 2 ) + """ "

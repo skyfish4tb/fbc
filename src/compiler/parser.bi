@@ -937,7 +937,7 @@ declare function hIntegerTypeFromBitSize _
 
 '':::::
 #macro hEmitCurrLine( )
-	if( env.clopt.debug ) then
+	if( env.clopt.debuginfo ) then
 		if( env.includerec = 0 ) then
 			astAdd( astNewLIT( lexCurrLineGet( ) ) )
 			lexCurrLineReset( )
