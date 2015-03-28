@@ -1334,6 +1334,7 @@ enum
 	OPT_C
 	OPT_CKEEPOBJ
 	OPT_D
+	OPT_DEBUGINFO
 	OPT_DLL
 	OPT_DYLIB
 	OPT_E
@@ -1396,6 +1397,7 @@ dim shared as integer option_takes_argument(0 to (OPT__COUNT - 1)) = _
 	FALSE, _ '' OPT_C
 	FALSE, _ '' OPT_CKEEPOBJ
 	TRUE , _ '' OPT_D
+	FALSE, _ '' OPT_DEBUGINFO
 	FALSE, _ '' OPT_DLL
 	FALSE, _ '' OPT_DYLIB
 	FALSE, _ '' OPT_E
@@ -1484,6 +1486,9 @@ private sub handleOpt(byval optid as integer, byref arg as string)
 
 	case OPT_D
 		fbAddPreDefine(arg)
+
+	case OPT_DEBUGINFO
+		fbSetOption( FB_COMPOPT_DEBUGINFO, TRUE )
 
 	case OPT_DLL, OPT_DYLIB
 		fbSetOption( FB_COMPOPT_OUTTYPE, FB_OUTTYPE_DYNAMICLIB )
@@ -1838,6 +1843,7 @@ private function parseOption(byval opt as zstring ptr) as integer
 
 	case asc("d")
 		ONECHAR(OPT_D)
+		CHECK("debuginfo", OPT_DEBUGINFO)
 		CHECK("dll", OPT_DLL)
 		CHECK("dylib", OPT_DYLIB)
 
@@ -3237,6 +3243,7 @@ private sub hPrintOptions( )
 	print "  -c               Compile only, do not link"
 	print "  -C               Preserve temporary .o files"
 	print "  -d <name>[=<val>]  Add a global #define"
+	print "  -debuginfo       Add debugging data to the binary, don't strip symbols"
 	print "  -dll             Same as -dylib"
 	print "  -dylib           Create a DLL (win32) or shared library (*nix/*BSD)"
 	print "  -e               Enable runtime error checking"
@@ -3246,7 +3253,7 @@ private sub hPrintOptions( )
 	print "  -forcelang <name>  Override #lang statements in source code"
 	print "  -fpmode fast|precise  Select floating-point math accuracy/speed"
 	print "  -fpu x87|sse     Set target FPU"
-	print "  -g               Add debug info"
+	print "  -g               Debug build with -debuginfo, assert(), __FB_DEBUG__"
 	print "  -gen gas|gcc|llvm  Select code generation backend"
 	print "  [-]-help         Show this help output"
 	print "  -i <path>        Add an include file search path"

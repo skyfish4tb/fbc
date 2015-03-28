@@ -7,6 +7,7 @@ Version 1.02.0
 [added]
 - __FB_ASM__ intrinsic #define on x86, defined to "intel" or "att" (corresponding to the -asm command line option -- useful for -gen gcc/llvm only)
 - fbc -showincludes option (shows #include tree) for debugging of #includes
+- fbc -debuginfo option: adds debug symbols like -g, but without enabling assert() or __FB_DEBUG__
 - Address-of followed by pointer-arithmetic on variables (expressions such as @x+N) will now be turned into offsetted variable accesses, resulting in better generated code
 - The results of type-casted function calls can now be ignored, even if it's a non-trivial cast
 - Covariant parameters and function results (feature request #289)
