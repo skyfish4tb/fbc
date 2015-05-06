@@ -2169,13 +2169,7 @@ function typeDump _
 	function = dump
 end function
 
-private sub hDumpName( byref s as string, byval sym as FBSYMBOL ptr )
-	if( sym = @symbGetGlobalNamespc( ) ) then
-		s += "<global namespace>"
-	else
-		s += hGetNamespacePrefix( sym )
-	end if
-
+private sub hDumpNameWithoutNamespace( byref s as string, byval sym as FBSYMBOL ptr )
 	if( sym->id.name ) then
 		s += *sym->id.name
 	else
@@ -2192,6 +2186,15 @@ private sub hDumpName( byref s as string, byval sym as FBSYMBOL ptr )
 	'' setup properly, then the mangled name will be empty or wrong.
 	s += " mangled """ + *symbGetMangledName( sym ) + """"
 #endif
+end sub
+
+private sub hDumpName( byref s as string, byval sym as FBSYMBOL ptr )
+	if( sym = @symbGetGlobalNamespc( ) ) then
+		s += "<global namespace>"
+	else
+		s += hGetNamespacePrefix( sym )
+	end if
+	hDumpNameWithoutNamespace( s, sym )
 end sub
 
 function symbDump( byval sym as FBSYMBOL ptr ) as string
@@ -2426,6 +2429,59 @@ function symbDump( byval sym as FBSYMBOL ptr ) as string
 
 	function = s
 end function
+
+private function hDumpBitRange( byval begin as longint, byval nxt as longint ) as string
+	'function = begin & ".." & (nxt - 1)
+	function = begin & ".." & nxt & "-1"
+end function
+
+private sub hDumpPadding( byval begin as longint, byval nxt as longint )
+	if( begin < nxt ) then
+		print "    " + !"\t" + hDumpBitRange( begin, nxt ) + !"\t" + "<padding> : " & (nxt - begin)
+	end if
+end sub
+
+sub symbDumpStruct( byval udt as FBSYMBOL ptr )
+	assert( symbIsStruct( udt ) )
+
+	dim header as string
+	if( symbGetUDTIsUnion( udt ) ) then
+		header += "union "
+	else
+		header += "struct "
+	end if
+	hDumpNameWithoutNamespace( header, udt )
+	header += " " & udt->udt.bitpos & "=" + hDumpBitRange( 0, udt->udt.bitpos )
+	header += " sizeof=" & udt->lgt
+	print header
+
+	var fld = symbGetCompSymbTb( udt ).head
+	var bitpos = 0
+	while( fld )
+		if( symbIsField( fld ) ) then
+			var fieldbitpos = fld->var_.bitpos
+			var fieldbitlen = symbGetFieldBitLength( fld )
+
+			hDumpPadding( bitpos, fieldbitpos )
+			bitpos = fieldbitpos + fieldbitlen
+
+			var s = "    "
+			s &= fld->ofs
+			s += !"\t"
+			s += hDumpBitRange( fieldbitpos, fieldbitpos + fieldbitlen )
+			s += !"\t"
+			hDumpNameWithoutNamespace( s, fld )
+			if( fld->var_.bits > 0 ) then
+				s += " : " & fld->var_.bits
+			end if
+			s += " " + typeDump( fld->typ, fld->subtype )
+			print s
+		end if
+		fld = fld->next
+	wend
+
+	hDumpPadding( bitpos, udt->udt.bitpos )
+end sub
 
 sub symbDumpNamespace( byval ns as FBSYMBOL ptr )
 	dim as FBSYMBOL ptr i = any

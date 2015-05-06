@@ -328,23 +328,10 @@ function astNewFIELD _
 		byval sym as FBSYMBOL ptr _
 	) as ASTNODE ptr
 
-	dim as ASTNODE ptr n = any
-	dim as integer dtype = any
-	dim as FBSYMBOL ptr subtype = any
-
-	dtype = l->dtype
-	subtype = l->subtype
-
 	assert( symbIsField( sym ) )
 	if( symbFieldIsBitfield( sym ) ) then
-		if( typeGetDtAndPtrOnly( dtype ) = FB_DATATYPE_BOOLEAN ) then
-			'' final type is always a signed int
-			dtype = typeJoin( dtype, FB_DATATYPE_INTEGER )
-		else
-			'' final type is always an unsigned int
-			dtype = typeJoin( dtype, FB_DATATYPE_UINT )
-		end if
-		subtype = NULL
+		'' Bitfield accesses are based on the bitfield's dtype, but unsigned
+		astSetType( l, typeToUnsigned( l->dtype ), NULL )
 
 		ast.bitfieldcount += 1
 
@@ -361,12 +348,10 @@ function astNewFIELD _
 		'' because those can only be integers, not UDTs.
 		assert( symbFieldIsBitfield( l->sym ) = FALSE )
 		l->sym = sym
-		l->dtype = dtype
-		l->subtype = subtype
 		return l
 	end if
 
-	n = astNewNode( AST_NODECLASS_FIELD, dtype, subtype )
+	var n = astNewNode( AST_NODECLASS_FIELD, l->dtype, l->subtype )
 	n->sym = sym
 	n->l = l
 
@@ -389,108 +374,447 @@ sub astForgetBitfields( byval n as ASTNODE ptr )
 	astForgetBitfields( n->r )
 end sub
 
-private function astSetBitfield _
+''
+'' Bitfield access code generation
+''
+'' Due to the support for SysV ABI and packing, bitfields can be allocated
+'' pretty much anywhere in a struct, even crossing allocation unit boundaries.
+''
+'' The bitfield access should probably be done based on the bitfield dtype,
+'' as for normal fields. It helps that bitfields can never have more bits than
+'' their dtype.
+''
+'' At least we should never touch memory outside of that, to avoid problems with
+'' multiple threads trying to access nearby memory locations. That's probably
+'' closest to the programmer's expectations. Of course, two bitfields using the
+'' same byte will always be accessed together, so that is never safe with
+'' regards to multi-threading.
+''
+'' Simple case: If a bitfield is allocated inside an allocation unit of its
+'' dtype, and the struct size >= that allocation unit, then it's safe to access
+'' the entire allocation unit (1/2/4/8 bytes) at a time without risking a buffer
+'' overflow.
+''
+'' Special case: If packing, the bitfield can cross allocation unit boundaries,
+'' and we will have to access multiple allocation units.
+''
+'' Special case: On 32bit x86 Linux, LONGINTs are 64bit but only 4byte-aligned.
+'' The allocation unit in this case is considered to be 32bit, so a LONGINT
+'' bitfield with more than 32 bits can cross allocation unit boundaries even
+'' without packing. Furthermore, structures with a LONGINT bitfield <= 32bits
+'' can have a size of only 4 bytes, not 8. That's at least one case where we
+'' can't read/write a chunk corresponding to the bitfield's dtype (without even
+'' packing).
+''
+'' Examples:
+''
+''
+''    type UDT field = 1
+''        i : 12 as long
+''    end type
+''
+''    0       1       2       3
+''    |-------|-------|-------|-------
+''    000011110000                      <- "i"
+''    [--------------]                  <- struct
+''    [         32bit access         ]  <- allocation unit access
+''    [ 16bit access ]                  <- truncated
+''
+''
+''    type UDT field = 1
+''        pad : 4 as long
+''        i : 32 as long
+''    end type
+''
+''    0       1       2       3       4       5       6       7
+''    |-------|-------|-------|-------|-------|-------|-------|-------
+''    0000                                                              <- "pad"
+''        00001111000011110000111100001111                              <- "i"
+''    [--------------------------------------]                          <- struct
+''    [         32bit access         ][         32bit access         ]  <- accessing two allocation units
+''    [         32bit access         ][ 8bit ]                          <- truncated to avoid overflow
+''
+''
+'' Code generation:
+''
+'' read:
+''   for every access
+''     do the read
+''     shr lskip, if it's the 1st to drop the lskip bits
+''     and rskip-mask, if it's the last to drop the rskip bits
+''     combine into final value with bitfield's dtype:
+''       shl bitpos, move into position in the combined value
+''       or with previous values
+''       bitpos += size of this access minus skips
+''
+'' write:
+''   for every access
+''     clone r
+''     extract the part of r for this access
+''     do the write
+''
+'' All offsets/lengths are in bits, not bytes
+''
+
+type BitAccess
+	pos as longint  '' absolute access offset (relative to struct begin)
+	len as longint
+
+	'' bits to ignore on left/right side, in case the bitfield doesn't cover
+	'' the whole accessed bytes
+	lskip as integer
+	rskip as integer
+
+	'' offset in the bitfield, so we know how where to shift the value when
+	'' combining it with other accesses.
+	bitfieldpos as longint
+end type
+
+const MAXACCESSCOUNT = 5  '' max. possible number of hMaybeAddAccess() calls
+
+type BitAccessLayout
+	accesses(0 to MAXACCESSCOUNT-1) as BitAccess
+	accesscount as integer
+	declare sub dump( )
+end type
+
+private sub BitAccessLayout.dump( )
+	for i as integer = 0 to accesscount - 1
+		with( accesses(i) )
+			print i & ". pos=" & .pos & " len=" & .len & _
+				" lskip=" & .lskip & " rskip=" & .rskip & _
+				" bitfieldpos=" & .bitfieldpos
+		end with
+	next
+end sub
+
+private sub hMaybeAddAccess _
 	( _
-		byval bitfield as FBSYMBOL ptr, _
-		byval l as ASTNODE ptr, _
-		byval r as ASTNODE ptr _
+		byref layout as BitAccessLayout, _
+		byval accesslen as integer, _
+		byref offset as longint, _
+		byref bitfieldpos as integer, _
+		byval rightbound as longint, _
+		byval fldpos as longint, _
+		byval fldnext as longint, _
+		byref lskip as integer _
+	)
+
+	'' Not enough room for an access of the given length?
+	if( (offset + accesslen) > rightbound ) then
+		exit sub
+	end if
+
+	'' Don't add access if the bitfield isn't reached by it, but there is
+	'' enough room for the access. Then we can also safely advance the
+	'' position, or else the bitfield would never be reached.
+	if( (offset + accesslen) <= fldpos ) then
+		offset += accesslen
+		assert( lskip >= accesslen )
+		lskip -= accesslen
+		exit sub
+	end if
+
+	'' Don't add access if it's fully behind the bitfield already
+	if( offset >= fldnext ) then
+		exit sub
+	end if
+
+	'' Add access
+	with( layout.accesses(layout.accesscount) )
+		.pos = offset
+		.len = accesslen
+		.bitfieldpos = bitfieldpos
+	end with
+
+	bitfieldpos += accesslen
+	if( layout.accesscount = 0 ) then
+		layout.accesses(0).lskip = lskip
+		bitfieldpos -= lskip
+	end if
+
+	layout.accesscount += 1
+
+	offset += accesslen
+
+end sub
+
+'' Fill a BitAccessLayout as needed for the given bitfield
+private sub hCalcBitAccessLayout( byref layout as BitAccessLayout, byval fld as FBSYMBOL ptr )
+	assert( symbIsBitfield( fld ) )
+	var udt = symbGetNamespace( fld )
+	assert( symbIsStruct( udt ) )
+
+	var fldpos = fld->var_.bitpos
+	var fldlen = fld->var_.bits
+	var fldnext = fldpos + fldlen
+	var allocunitlen = typeCalcNaturalAlign( fld->typ, fld->subtype ) * 8
+	var structlen = symbGetLen( udt ) * 8
+
+	#define hGetAllocUnitPos( pos, powerof2 ) (pos and (not (powerof2 - 1)))
+
+	'' Left boundary = the begin of the allocation unit (based on the
+	'' bitfield's dtype) in which the bitfield starts. We should not access
+	'' anything more left than that as it would probably be the last thing
+	'' the programmer expects. Also, we can't access offsets < 0 (that would
+	'' be outside the struct).
+	var leftbound = hGetAllocUnitPos( fldpos, allocunitlen )
+
+	'' Right boundary = next allocation unit behind the end of the bitfield
+	'' but trim it to struct's length to avoid buffer overflow
+	var rightbound = hGetAllocUnitPos( fldnext, allocunitlen ) + allocunitlen
+	'' can be 1, 2 or 3 allocation units
+	'' (max. = 64bit bitfield touching 3x 32bit allocation units)
+	assert( ((leftbound + (allocunitlen * 1) = rightbound)) or _
+	        ((leftbound + (allocunitlen * 2) = rightbound)) or _
+	        ((leftbound + (allocunitlen * 3) = rightbound)) )
+	if( rightbound > structlen ) then
+		rightbound = structlen
+	end if
+
+	'' Determine needed accesses to cover the allocation unit(s)
+	'' but cut off overhead accesses at the end, if we'd otherwise produce
+	'' more than 1, if the bitfield doesn't actually cover the whole
+	'' allocation unit(s).
+	'' Set bitfieldpos for every access
+	var offset = leftbound
+	var bitfieldpos = 0
+	dim as integer lskip = fldpos - leftbound  '' initial lskip
+
+	'' Build the full allocation unit accesses (max. 3),
+	'' as many as needed while there still is enough room
+	hMaybeAddAccess( layout, allocunitlen, offset, bitfieldpos, rightbound, fldpos, fldnext, lskip )
+	hMaybeAddAccess( layout, allocunitlen, offset, bitfieldpos, rightbound, fldpos, fldnext, lskip )
+	hMaybeAddAccess( layout, allocunitlen, offset, bitfieldpos, rightbound, fldpos, fldnext, lskip )
+
+	'' Build the smaller accesses at the tail if the whole allocation unit
+	'' accesses weren't enough yet
+	hMaybeAddAccess( layout, 32, offset, bitfieldpos, rightbound, fldpos, fldnext, lskip )
+	hMaybeAddAccess( layout, 16, offset, bitfieldpos, rightbound, fldpos, fldnext, lskip )
+	hMaybeAddAccess( layout,  8, offset, bitfieldpos, rightbound, fldpos, fldnext, lskip )
+
+	assert( offset >= fldnext )
+	assert( offset <= rightbound )
+	assert( bitfieldpos >= fldlen )
+	layout.accesses(layout.accesscount-1).rskip = bitfieldpos - fldlen
+
+	#if __FB_DEBUG__
+		scope
+			for i as integer = 0 to layout.accesscount - 1
+				with( layout.accesses(i) )
+					assert( .lskip < .len )
+					assert( .rskip < .len )
+					assert( .bitfieldpos < fldlen )
+					var effectivelen = .len - .lskip - .rskip
+					assert( (.bitfieldpos + effectivelen) <= fldlen )
+				end with
+			next
+		end scope
+	#endif
+end sub
+
+private function hBuildAccess _
+	( _
+		byval lhs as ASTNODE ptr, _
+		byval bitpos as longint, _
+		byval bitlen as integer _
 	) as ASTNODE ptr
 
-	''
-	''    l<bitfield> = r
-	'' becomes:
-	''    l<int> = (l<int> and mask) or ((r and bits) shl bitpos)
-	''
+	dim dtype as integer
 
-	if( symbGetType( bitfield ) = FB_DATATYPE_BOOLEAN ) then
-		l->dtype = typeJoin( bitfield->typ, FB_DATATYPE_UINT )
-		l->subtype = NULL
-	else
-		'' Remap type from bitfield to short/integer/etc., whichever was given
-		'' on the bitfield, to do a "full" field access.
-		l->dtype = bitfield->typ
-		l->subtype = bitfield->subtype
+	'' Bitfields are treated as unsigned in FB currently,
+	'' but even without considering that, the internal access code should
+	'' probably use unsigned types only, since it has to do lots of masking
+	'' and shifting, and this way we don't have to worry about sign-extension...
+	select case( bitlen )
+	case 8    : dtype = FB_DATATYPE_UBYTE
+	case 16   : dtype = FB_DATATYPE_USHORT
+	case 32   : dtype = FB_DATATYPE_ULONG
+	case 64   : dtype = FB_DATATYPE_ULONGINT
+	case else : assert( FALSE )
+	end select
+
+	assert( (bitpos mod 8) = 0 )
+	function = astBuildDerefAddrOf( lhs, bitpos \ 8, dtype, NULL, NULL )
+end function
+
+'' Example: lkeep=3
+''  1 shl 3 = &b00001000
+''  - 1     = &b00000111
+'' keeping only the lower 3 bits, masking out the upper bits.
+#define hGetLKeepMask( lkeep ) ((1ll shl (lkeep)) - 1)
+
+'' Example: accesslen=8, rskip=3
+''  1 shl 5 = &b00100000
+''  - 1     = &b00011111
+'' keeping only the lower 5 bits, masking out the upper 3 bits (rskip).
+'' The mask has to correspond to the dtype (as specified by accesslen).
+'' For example, for an 8bit access, the rskip=3 mask is:
+''            &b00011111
+'' but for a 16bit access (16 - 3 = 13), it would be:
+''    &b0001111111111111
+#define hGetRSkipMask( accesslen, rskip ) hGetLKeepMask( accesslen - rskip )
+
+'' Inversed, dtype-specific version of hGetRSkipMask(), for example:
+'' accesslen=8 rkeep=3:
+''       &b00011111
+''    => &b11100000 (bitwise NOT, with overhead leading 1's cut off)
+'' accesslen=16 rkeep=3:
+''       &b0001111111111111
+''    => &b1110000000000000
+#define hGetRKeepMask( accesslen, rkeep ) _
+	((not hGetRSkipMask( accesslen, rkeep )) and _
+	 hGetLKeepMask( accesslen ))
+
+	dim layout as BitAccessLayout
+
+	hCalcBitAccessLayout( layout, bitfield )
+
+	dim t as ASTNODE ptr
+
+	'' Must handle side effects, if we're going to use the trees more than once...
+	'' l/memloc: cloned at least once per access (and deleted once at the end),
+	''    additonally another clone per access if existing bits need to be
+	''    preserved (which is almost always the case...)
+	'' r: cloned once per access (and deleted once at the end)
+	if( astHasSideFx( l ) ) then
+		t = astNewLINK( t, astRemSideFx( l ) )
+	end if
+	if( layout.accesscount > 1 ) then
+		if( astHasSideFx( r ) ) then
+			t = astNewLINK( t, astRemSideFx( r ) )
+		end if
 	end if
 
-	'' l is reused on the rhs and thus must be duplicated
-	l = astCloneTree( l )
+	'' Build AST for these accesses
+	for i as integer = 0 to layout.accesscount - 1
+		'' l = the field access, but at offset 0, since bitfields have ofs=0
+		'' We can now build our accesses based on l.
+		'' r = the value to store into the bitfield
 
-	'' Apply a mask to retrieve all bits but the bitfield's ones
-	l = astNewBOP( AST_OP_AND, l, _
-		astNewCONSTi( not (ast_bitmaskTB(bitfield->var_.bits) shl bitfield->var_.bitpos) ) )
+		var accesslen = layout.accesses(i).len
+		var memloc = hBuildAccess( astCloneTree( l ), layout.accesses(i).pos, accesslen )
 
-	'' This ensures the bitfield is zeroed & clean before the new value
-	'' is ORed in below. Since the new value may contain zeroes while the
-	'' old values may have one-bits, the OR alone wouldn't necessarily
-	'' overwrite the old value.
-
-	'' boolean bitfield? - do a bool conversion before the bitfield store
-	if( symbGetType( bitfield ) = FB_DATATYPE_BOOLEAN ) then
-		if( r->class <> AST_NODECLASS_CONV ) then
-			r = astNewCONV( FB_DATATYPE_BOOLEAN, NULL, r )
+		'' Extract relevant part of r, mask out overhead bits, shift it into position
+		var newvalue = astCloneTree( r )
+		var bitfieldpos = layout.accesses(i).bitfieldpos
+		if( bitfieldpos > 0 ) then
+			assert( bitfieldpos < (typeGetSize( newvalue->dtype ) * 8) )
+			newvalue = astNewBOP( AST_OP_SHR, newvalue, astNewCONSTi( bitfieldpos ) )
 		end if
-		r = astNewCONV( FB_DATATYPE_UINT, NULL, r )
-
-		r = astNewBOP( AST_OP_AND, r, _
-		               astNewCONSTi( (ast_bitmaskTB(bitfield->var_.bits) shl bitfield->var_.bitpos), _
-		                             FB_DATATYPE_UINT ) )
-	else
-		'' Truncate r if it's too big, ensuring the OR below won't touch any
-		'' other bits outside the target bitfield.
-		r = astNewBOP( AST_OP_AND, r, astNewCONSTi( ast_bitmaskTB(bitfield->var_.bits) ) )
-
-		'' Move r into position if the bitfield doesn't lie at the beginning of
-		'' the accessed field.
-		if( bitfield->var_.bitpos > 0 ) then
-			r = astNewBOP( AST_OP_SHL, r, astNewCONSTi( bitfield->var_.bitpos ) )
+		var rskip = layout.accesses(i).rskip
+		if( rskip > 0 ) then
+			var mask = hGetRSkipMask( accesslen, rskip )
+			newvalue = astNewBOP( AST_OP_AND, newvalue, astNewCONSTi( mask ) )
 		end if
-	end if
+		var lskip = layout.accesses(i).lskip
+		if( lskip > 0 ) then
+			assert( lskip < (typeGetSize( newvalue->dtype ) * 8) )
+			newvalue = astNewBOP( AST_OP_SHL, newvalue, astNewCONSTi( lskip ) )
+		end if
 
-	'' OR in the new bitfield value r
-	function = astNewBOP( AST_OP_OR, l, r )
+		'' lskip/rskip represent bits that need to be preserved - i.e.
+		'' we have to read them out, and OR them into the new value for
+		'' the memory location.
+		dim keepmask as longint
+		if( lskip > 0 ) then
+			keepmask or= hGetLKeepMask( lskip )
+		end if
+		if( rskip > 0 ) then
+			keepmask or= hGetRKeepMask( accesslen, rskip )
+		end if
+		if( keepmask ) then
+			var keepval = astNewBOP( AST_OP_AND, astCloneTree( memloc ), astNewCONSTi( keepmask ) )
+			newvalue = astNewBOP( AST_OP_OR, newvalue, keepval )
+		end if
+
+		t = astNewLINK( t, astNewASSIGN( memloc, newvalue ) )
+	next
+
+	astDelTree( l )  '' was cloned above, once per access...
+	astDelTree( r )  '' ditto
+
+	function = t
 end function
 
 private function astAccessBitfield _
 	( _
 		byval bitfield as FBSYMBOL ptr, _
+		byval fielddtype as integer, _
 		byval l as ASTNODE ptr _
 	) as ASTNODE ptr
 
-	''    l<bitfield>
-	'' becomes:
-	''    (l<int> shr bitpos) and mask
+	dim layout as BitAccessLayout
 
-	'' Remap type from bitfield to short/integer/etc, while keeping in
-	'' mind that the bitfield may have been casted, so the FIELD's type
-	'' can't just be discarded.
-	'' if boolean make sure the bool conversion is after the bitfield access
-	dim boolconv as integer
-	if( symbGetType( bitfield ) = FB_DATATYPE_BOOLEAN ) then
-		l->dtype = typeJoin( l->dtype, FB_DATATYPE_BYTE )
-		l->subtype = NULL
-		boolconv = TRUE
-	else
-		l->dtype = typeJoin( l->dtype, bitfield->typ )
-		l->subtype = bitfield->subtype
-		boolconv = FALSE
+	hCalcBitAccessLayout( layout, bitfield )
+
+	dim t as ASTNODE ptr
+
+	'' Must handle side effects, if we're going to use the trees more than once...
+	if( layout.accesscount > 1 ) then
+		if( astHasSideFx( l ) ) then
+			t = astNewLINK( t, astRemSideFx( l ) )
+		end if
 	end if
 
-	'' Shift into position, other bits to the right are shifted out
-	if( bitfield->var_.bitpos > 0 ) then
-		l = astNewBOP( AST_OP_SHR, l, astNewCONSTi( bitfield->var_.bitpos ) )
-	end if
+	'' Build AST for these accesses
+	dim result as ASTNODE ptr
+	for i as integer = 0 to layout.accesscount - 1
+		'' l = the field access, but at offset 0, since bitfields have ofs=0
+		'' We can now build our accesses based on l.
 
-	'' Mask out other bits to the left
-	l = astNewBOP( AST_OP_AND, l, astNewCONSTi( ast_bitmaskTB(bitfield->var_.bits) ) )
+		'' Main access (e.g. whole allocation unit)
+		var accesslen = layout.accesses(i).len
+		var readaccess = hBuildAccess( astCloneTree( l ), layout.accesses(i).pos, accesslen )
 
-	'' do boolean conversion after bitfield access
-	if( boolconv ) then
-		l->dtype = typeJoin( l->dtype, bitfield->typ )
-		l->subtype = bitfield->subtype
-		l = astNewCONV( FB_DATATYPE_INTEGER, NULL, l )
-	end if
+		'' Mask out rskip bits
+		var rskip = layout.accesses(i).rskip
+		if( rskip > 0 ) then
+			var mask = hGetRSkipMask( accesslen, rskip )
+			readaccess = astNewBOP( AST_OP_AND, readaccess, astNewCONSTi( mask ) )
+		end if
 
-	function = l
+		'' Shift out lskip bits
+		var lskip = layout.accesses(i).lskip
+		if( lskip > 0 ) then
+			assert( lskip < (typeGetSize( readaccess->dtype ) * 8) )
+			readaccess = astNewBOP( AST_OP_SHR, readaccess, astNewCONSTi( lskip ) )
+		end if
+
+		'' Widen access to bitfield's dtype, if the access was smaller,
+		'' so it can be combined with other accesses properly.
+		'' (e.g. when "shifting it into position" the dtype must be big enough,
+		'' otherwise the shift amount could be > the dtype size)
+		'' Unsigned because hBuildAccess() uses unsigned types too.
+		assert( fielddtype = typeToUnsigned( symbGetType( bitfield ) ) )
+		assert( typeGetClass( fielddtype ) = FB_DATACLASS_INTEGER )
+		if( typeGetSize( readaccess->dtype ) < typeGetSize( fielddtype ) ) then
+			readaccess = astNewCONV( fielddtype, NULL, readaccess )
+		end if
+
+		'' Shift access into position, for combining with other accesses
+		var bitfieldpos = layout.accesses(i).bitfieldpos
+		if( bitfieldpos > 0 ) then
+			assert( bitfieldpos < (typeGetSize( readaccess->dtype ) * 8) )
+			readaccess = astNewBOP( AST_OP_SHL, readaccess, astNewCONSTi( bitfieldpos ) )
+		end if
+
+		'' Note: the lskip/bitfieldpos shifts never happen together,
+		'' since lskip can only happen at the first access,
+		'' which will always have bitfieldpos=0.
+
+		if( result = NULL ) then
+			result = readaccess
+		else
+			result = astNewBOP( AST_OP_OR, result, readaccess )
+		end if
+	next
+
+	t = astNewLINK( t, result, FALSE )
+
+	astDelTree( l )  '' was cloned above, once per access...
+
+	function = t
 end function
 
 #if __FB_DEBUG__
@@ -539,16 +863,26 @@ function astUpdateBitfields( byval n as ASTNODE ptr ) as ASTNODE ptr
 				astDelNode( n->l )
 				n->l = n->l->l
 
-				'' The lhs' type is adjusted, and the new rhs
-				'' is returned.
-				n->r = astSetBitfield( bitfield, n->l, n->r )
+				'' Build the new bitfield assignment code
+				var newassign = astSetBitfield( bitfield, n->l, n->r )
+
+				'' Delete the old ASSIGN
+				astDelNode( n )
+
+				return astUpdateBitfields( newassign )
 			end if
 		end if
 
 	case AST_NODECLASS_FIELD
+		var l = n->l
 		if( symbFieldIsBitfield( n->sym ) ) then
-			var l = n->l
-			l = astAccessBitfield( n->sym, l )
+			l = astAccessBitfield( n->sym, n->dtype, l )
+
+			'' Make sure the bitfield access expression has the same dtype as the FIELD,
+			'' the parent node may rely on it (e.g. if it's a noconv cast)
+			l = astNewCONV( n->dtype, NULL, l )
+			assert( l->dtype = n->dtype )
+			assert( l->subtype = n->subtype )
 
 			'' Delete and link out the FIELD
 			ast.bitfieldcount -= 1

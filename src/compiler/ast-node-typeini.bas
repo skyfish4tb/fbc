@@ -445,6 +445,7 @@ function astTypeIniFlush overload _
 					'' otherwise the bitfield assignment(s) would leave unused bits
 					'' uninitialized.
 					if( symbFieldIsBitfield( n->sym ) ) then
+						'' TODO: update for bitfield layout changes
 						'' Beginning of a field containing one or more bitfields?
 						if( n->sym->var_.bitpos = 0 ) then
 							l = astBuildDerefAddrOf( astCloneTree( target ), n->typeini.ofs, n->dtype, n->subtype )

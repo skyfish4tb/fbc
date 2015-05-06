@@ -72,66 +72,51 @@ end sub
 
 sub test_4 cdecl ()
 	dim as bar f
-	dim as integer ptr i
-	i = cast(integer ptr, @f)
-
-	CU_ASSERT_EQUAL( sizeof( bar ), sizeof( integer ) * 3 )
-
-	CU_ASSERT_EQUAL( *i, 0 )
-
+	var pb = cptr( byte ptr, @f )
+	CU_ASSERT_EQUAL( sizeof( bar ), 3 )
 	CU_ASSERT_EQUAL( f.a, 0 )
 	CU_ASSERT_EQUAL( f.b, 0 )
 	CU_ASSERT_EQUAL( f.c, 0 )
 	CU_ASSERT_EQUAL( f.d, 0 )
-
-	CU_ASSERT_EQUAL(  *(i+0), 0 )
-	CU_ASSERT_EQUAL(  *(i+1), 0 )
-	CU_ASSERT_EQUAL(  *(i+2), 0 )
+	CU_ASSERT_EQUAL( pb[0], 0 )
+	CU_ASSERT_EQUAL( pb[1], 0 )
+	CU_ASSERT_EQUAL( pb[2], 0 )
 
 	f.a = 1
-
 	CU_ASSERT_EQUAL( f.a, 1 )
 	CU_ASSERT_EQUAL( f.b, 0 )
 	CU_ASSERT_EQUAL( f.c, 0 )
 	CU_ASSERT_EQUAL( f.d, 0 )
-
-	CU_ASSERT_EQUAL(  *(i+0), 1 )
-	CU_ASSERT_EQUAL(  *(i+1), 0 )
-	CU_ASSERT_EQUAL(  *(i+2), 0 )
+	CU_ASSERT_EQUAL( pb[0], 1 )
+	CU_ASSERT_EQUAL( pb[1], 0 )
+	CU_ASSERT_EQUAL( pb[2], 0 )
 
 	f.b = 1
-
 	CU_ASSERT_EQUAL( f.a, 1 )
 	CU_ASSERT_EQUAL( f.b, 1 )
 	CU_ASSERT_EQUAL( f.c, 1 )
 	CU_ASSERT_EQUAL( f.d, 0 )
-
-	CU_ASSERT_EQUAL(  *(i+0), 1 )
-	CU_ASSERT_EQUAL(  *(i+1), 1 )
-	CU_ASSERT_EQUAL(  *(i+2), 0 )
+	CU_ASSERT_EQUAL( pb[0], 1 )
+	CU_ASSERT_EQUAL( pb[1], 1 )
+	CU_ASSERT_EQUAL( pb[2], 0 )
 
 	f.c = 0
-
 	CU_ASSERT_EQUAL( f.a, 1 )
 	CU_ASSERT_EQUAL( f.b, 0 )
 	CU_ASSERT_EQUAL( f.c, 0 )
 	CU_ASSERT_EQUAL( f.d, 0 )
-
-	CU_ASSERT_EQUAL(  *(i+0), 1 )
-	CU_ASSERT_EQUAL(  *(i+1), 0 )
-	CU_ASSERT_EQUAL(  *(i+2), 0 )
+	CU_ASSERT_EQUAL( pb[0], 1 )
+	CU_ASSERT_EQUAL( pb[1], 0 )
+	CU_ASSERT_EQUAL( pb[2], 0 )
 
 	f.d = 1
-
 	CU_ASSERT_EQUAL( f.a, 1 )
 	CU_ASSERT_EQUAL( f.b, 0 )
 	CU_ASSERT_EQUAL( f.c, 0 )
 	CU_ASSERT_EQUAL( f.d, 1 )
-
-	CU_ASSERT_EQUAL(  *(i+0), 1 )
-	CU_ASSERT_EQUAL(  *(i+1), 0 )
-	CU_ASSERT_EQUAL(  *(i+2), 1 )
-
+	CU_ASSERT_EQUAL( pb[0], 1 )
+	CU_ASSERT_EQUAL( pb[1], 0 )
+	CU_ASSERT_EQUAL( pb[2], 1 )
 end sub
 
 private sub ctor () constructor

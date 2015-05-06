@@ -11,6 +11,8 @@
 #include once "list.bi"
 #include once "ir.bi"
 
+declare function symbUdtGetLastField( byval udt as FBSYMBOL ptr ) as FBSYMBOL ptr
+
 ''::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 '' add
 ''::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -153,17 +155,23 @@ function typeCalcNaturalAlign _
 	function = align
 end function
 
-private function hCalcPadding _
+private sub hUpdateUdtNaturalAlignment( byval udt as FBSYMBOL ptr, byval natalign as integer )
+	if( udt->udt.natalign < natalign ) then
+		udt->udt.natalign = natalign
+	end if
+end sub
+
+'' Determine the padding bits needed to get to the next bit offset where a
+'' [bit]field can be inserted
+private function hCalcPaddingBits _
 	( _
-		byval ofs as longint, _
+		byval bitoffset as longint, _
 		byval align as integer, _
 		byval dtype as integer, _
 		byval subtype as FBSYMBOL ptr _
 	) as integer
 
-	dim as integer natalign = any
-
-	natalign = typeCalcNaturalAlign( dtype, subtype )
+	var natalign = typeCalcNaturalAlign( dtype, subtype )
 
 	'' default?
 	if( align = 0 ) then
@@ -179,30 +187,11 @@ private function hCalcPadding _
 		end if
 	end if
 
-	'' Calculate the padding bytes needed to align the current offset,
-	'' so that offset mod align = 0.
-	function = (align - (ofs and (align - 1))) and (align - 1)
-end function
+	var bitalign = align * 8
 
-private function hCheckUDTSize _
-	( _
-		byval udtlen as ulongint, _
-		byval fieldlen as ulongint, _
-		byval fieldpad as uinteger _
-	) as integer
-
-	dim as ulongint n = any
-
-	n = udtlen
-	n += fieldlen
-	n += fieldpad
-
-	if( n > &h7FFFFFFFull ) then
-		function = FALSE
-		errReport( FB_ERRMSG_UDTTOOBIG )
-	else
-		function = TRUE
-	end if
+	'' Determine the bits needed to round up to a multiple of bitalign
+	var bitremainder = cint( bitoffset ) and (bitalign - 1)
+	function = (bitalign - bitremainder) and (bitalign - 1)
 end function
 
 '':::::
@@ -223,39 +212,124 @@ function symbCheckBitField _
 	select case as const typeGet( dtype )
 	case FB_DATATYPE_BYTE, FB_DATATYPE_UBYTE, FB_DATATYPE_SHORT, FB_DATATYPE_USHORT, _
 	     FB_DATATYPE_INTEGER, FB_DATATYPE_UINT, FB_DATATYPE_LONG, FB_DATATYPE_ULONG, _
-	     FB_DATATYPE_BOOLEAN
-		return TRUE
+	     FB_DATATYPE_LONGINT, FB_DATATYPE_ULONGINT, FB_DATATYPE_BOOLEAN
 
-	case FB_DATATYPE_LONGINT, FB_DATATYPE_ULONGINT
-		'' Allow 64bit bitfields on 64bit
-		'' TODO: 64bit bitfields on 32bit -- currently not supported
-		'' because bitfield accesses are based on the default word size
-		function = fbIs64bit( )
 	case else
 		return FALSE
 	end select
 
+	function = TRUE
 end function
 
+private function hBitfieldNeedsNewAllocationUnit _
+	( _
+		byval parent as FBSYMBOL ptr, _
+		byval dtype as integer, _
+		byval bitlen as integer, _
+		byval bitpad_for_normal_align as integer _
+	) as integer
+
+	'' Packing enabled by FIELD=N?
+	if( parent->udt.align > 0 ) then
+		return FALSE
+	end if
+
+	'' Start new allocation unit if the last one doesn't have enough room
+	var start_new_unit = (bitlen > bitpad_for_normal_align)
+
+	if( env.clopt.msbitfields ) then
+		'' MS ABI: also start a new allocation unit if dtype differs from that
+		'' of the previous field
+		var prevfield = symbUdtGetLastField( parent )
+		if( prevfield ) then
+			start_new_unit or= _
+				(typeGetClass( prevfield->typ ) <> typeGetClass( dtype )) or _
+				( typeGetSize( prevfield->typ ) <>  typeGetSize( dtype ))
+		end if
+	end if
+
+	function = start_new_unit
+end function
+
+private function hCheckUdtSize( byval bitlen as longint, byval addedbits as longint ) as integer
+	'' soft limit: 2 GiB, * 8 to convert it to bits
+	'' 2 GiB seems like a good limit on 32bit at least, so it won't overflow signed integers.
+	'' This check should also prevent overflows in the compiler code dealing with UDT sizes,
+	'' field bit offsets, etc.
+	const MAXBITS as longint = &h7FFFFFFFll * 8
+	function = ((bitlen < MAXBITS) and (addedbits < MAXBITS)) andalso _
+	           ((bitlen + addedbits) <= MAXBITS)
+end function
+
+private sub hRecalcUdtOfsLgt( byval udt as FBSYMBOL ptr )
+	udt->ofs = udt->udt.bitpos \ 8
+	udt->lgt = udt->ofs
+end sub
+
+private sub hIncreaseUdtSize( byval udt as FBSYMBOL ptr, byval addedbits as longint )
+	if( hCheckUdtSize( udt->udt.bitpos, addedbits ) = FALSE ) then
+		errReport( FB_ERRMSG_UDTTOOBIG )
+		exit sub
+	end if
+	udt->udt.bitpos += addedbits
+	hRecalcUdtOfsLgt( udt )
+end sub
+
+private sub hIncreaseUdtSizeOrUpdateUnion( byval udt as FBSYMBOL ptr, byval fieldbitlen as longint )
+	if( symbGetUDTIsUnion( udt ) ) then
+		if( udt->udt.bitpos < fieldbitlen ) then
+			udt->udt.bitpos = fieldbitlen
+			hRecalcUdtOfsLgt( udt )
+		end if
+	else
+		hIncreaseUdtSize( udt, fieldbitlen )
+	end if
+end sub
+
+private sub hUpdateFieldOffset( byval fld as FBSYMBOL ptr )
+	if( fld->var_.bits > 0 ) then
+		fld->ofs = 0
+	else
+		fld->ofs = fld->var_.bitpos \ 8
+	end if
+end sub
+
 ''
-'' Add a new field, it can be one of:
+'' Add a new field to a struct; this can be one of the following:
 ''
-'' a) A real field taking up memory in the structure, i.e. struct layout always
-''    changes in this case. The new field is appended to the end of the
-''    structure, possibly preceded by padding bytes between the previous field
-''    and the new one.
+'' a) A "normal" field:
+'' * is aligned (at least) to byte boundary
+'' * may require preceding padding bits/bytes to be aligned
+'' * has an alignment requirement depending on its data type and the target
+''   system, but it can be decreased (but never increased) by FIELD=N
 ''
-'' b) A bitfield, which is either merged into an existing memory chunk at the
-''    end of the structure (conceptually: container field, as represented by
-''    by the first bitfield in the memory chunk), or causes a new "container
-''    field" to be started and becomes the first bitfield in it. In the former
-''    case, the struct layout doesn't change; in the latter, it changes.
+'' b) A bitfield:
+'' * SysV i386 ABI:
+''   - is allocated inside allocation units corresponding to its dtype
+''     (conceptually inside a container field of that dtype)
+''   - is appended behind existing fields (no matter whether they're bitfields
+''     or not!) inside the last allocation unit, if there is enough room
+''     remaining, otherwise a new allocation unit is started
+''   - cannot cross that allocation unit's boundaries, unless packed.
+''     FIELD=N enables packing; the alignment value N doesn't apply to bitfields
+''     though because they have an alignment requirement of 1 bit - the lowest
+''     possible anyways, and FIELD=N never increases alignment.
+'' * MS ABI (msbitfields):
+''   It's the same except that bitfields will only be added to an existing
+''   allocation unit if the previous field has the same sizeof(dtype). If not,
+''   a new allocation unit is started.
+''   TODO: Also, bitfields will only be merged with bitfields, not normal fields?!
+''   TODO: How do MS bitfields interfact with packing?
+''
+'' Thus: The SysV ABI packs bitfields more tightly than the MS ABI, and with the
+'' MS ABI, the "container field" always corresponds to the 1st bitfields' dtype,
+'' while with the SysV ABI it's not that easy.
 ''
 '' c) A fake dynamic array field, which causes a corresponding real descriptor
 ''    field to be added recursively. The fake array field does not use up any
 ''    memory, only the descriptor will actually be emitted. While adding the
 ''    fake array field, the struct layout doesn't change. When adding the
-''    descriptor, it changes, as with any other real field.
+''    descriptor, it changes, as with any other "normal" field.
 ''
 function symbAddField _
 	( _
@@ -270,27 +344,26 @@ function symbAddField _
 		byval attrib as integer _
 	) as FBSYMBOL ptr
 
-	dim as FBSYMBOL ptr sym = any, tail = any, base_parent = any, _
-		desc = any, desctype = any
-	dim as integer pad = any, alloc_field = any, elen = any, options = any
-	dim as longint offset = any
+	dim as FBSYMBOL ptr sym = any, tail = any, base_parent = any, desctype = any
+	dim as integer options = any, alloc_field = any
 
 	function = NULL
-	desc = NULL
 
     '' calc length if it wasn't given
 	if( lgt <= 0 ) then
 		lgt	= symbCalcLen( dtype, subtype )
 	end if
 
+	dim as FBSYMBOL ptr desc
+	dim as longint bitpos
+
 	'' Dynamic array field? Recursively add the corresponding descriptor field.
 	if( attrib and FB_SYMBATTRIB_DYNAMIC ) then
 		assert( dimensions > 0 )
 
-		'' Because this is done here at the top:
-		''  - the descriptor will be added before the fake array,
-		''    allowing the fake array to be "merged" into the descriptor
-		''  - we have to worry about the symbUniqueId() call
+		'' Because this is done here at the top, the descriptor will be
+		'' added before the fake array, allowing the fake array to be
+		'' "merged" into the descriptor (use the same offset).
 		dim as FBARRAYDIM emptydTB(0 to 0)
 
 		'' Note: using the exact descriptor type corresponding to the
@@ -303,116 +376,43 @@ function symbAddField _
 
 		'' Same offset for the fake array field as for the descriptor,
 		'' to make astNewARG()'s job easier
-		offset = desc->ofs
-		alloc_field = FALSE
+		bitpos = desc->ofs * 8
 	else
 		assert( dimensions >= 0 )
 
-		'' All other fields default to the next available offset,
-		'' except bitfields which are given special treatment below.
-		offset = parent->ofs
-		alloc_field = TRUE
-	end if
+		'' Update UDT's alignment to the largest alignment required by its fields
+		'' (even the dtype given for individual bitfields is taken into account
+		'' for this, no matter how those bitfields are actually layed out)
+		hUpdateUdtNaturalAlignment( parent, typeCalcNaturalAlign( dtype, subtype ) )
 
-	'' Check for bitfield
-	if( bits > 0 ) then
-		symbSetUdtHasBitfield( parent )
-
-		'' last field was a bitfield too? try to merge..
-		if( parent->udt.bitpos > 0 ) then
-			'' Find the last field (skipping over methods etc.)
-			tail = parent->udt.ns.symtb.tail
-			while( symbIsField( tail ) = FALSE )
-				tail = tail->prev
-			wend
-
-			assert( symbIsBitfield( tail ) )
-
-			'' Too many bits to fit into previous bitfield container field?
-			if( parent->udt.bitpos + bits > tail->lgt*8 ) then
-				'' Start new container field, this bitfield will be at bitpos 0 in it
-				parent->udt.bitpos = 0
-			else
-				'' The previous container field still has enough
-				'' room to hold this new bitfield.
-
-				'' if it fits but len is different, make it the same
-				'' TODO: is this "right"? shouldn't the different
-				'' type trigger a new container field to be used?
-				'' look what gcc does, with/without -mms-bitfields
-				'' This for now allows merging bitfields if they
-				'' have a different length, but maybe then this
-				'' check shouldn't just be done for different lengths,
-				'' but always if the dtypes are different?
-				if( lgt <> tail->lgt ) then
-					dtype = symbGetType( tail )
-					lgt = tail->lgt
-				end if
-
-				'' Put this bitfield into the same container as the previous bitfield,
-				'' i.e. same base offset as the previous bitfield.
-				offset = tail->ofs
-				alloc_field = FALSE
-			end if
-		end if
-	else
-		'' Normal fields are not merged into bitfield containers,
-		'' so the bitfield merging is interrupted here.
-		parent->udt.bitpos = 0
-	end if
-
-	'' Add padding for normal fields (neither bitfield nor fake array)
-	if( alloc_field ) then
-		pad = hCalcPadding( offset, parent->udt.align, dtype, subtype )
-		if( pad > 0 ) then
-
-			'' bitfield?
-			if( bits > 0 ) then
-				'' not M$-way?
-				if( env.clopt.msbitfields = FALSE ) then
-					'' follow the GCC ABI..
-					if( bits <= pad * 8 ) then
-						lgt = pad
-                        pad = 0
-
-						'' remap type
-						select case lgt
-						case 1
-							if( typeIsSigned( dtype ) ) then
-								dtype = FB_DATATYPE_BYTE
-							else
-								dtype = FB_DATATYPE_UBYTE
-							end if
-						case 2
-							if( typeIsSigned( dtype ) ) then
-								dtype = FB_DATATYPE_SHORT
-							else
-								dtype = FB_DATATYPE_USHORT
-							end if
-
-						'' padding won't be >= sizeof(int) because only
-						'' integers can be used as bitfields
-						end select
-
-					end if
-
-				end if
-			end if
-		end if
-
-		'' Check whether adding this field would make the UDT be too big
-		if( hCheckUDTSize( offset, lgt, pad ) ) then
-			offset += pad
+		if( symbGetUDTIsUnion( parent ) ) then
+			'' No padding for fields in unions, because everything starts at the top
+			bitpos = 0
 		else
-			'' error recovery: don't add this field
-			alloc_field = FALSE
-		end if
+			'' Get padding bits needed to properly align a new (non-bit-)field of the given dtype
+			'' This also tells us how much room there is left in the previous allocation unit
+			'' corresponding to this dtype.
+			var bitpad_for_normal_align = hCalcPaddingBits( parent->udt.bitpos, parent->udt.align, dtype, subtype )
 
-		'' update largest field len
-		elen = typeCalcNaturalAlign( dtype, subtype )
-		'' larger?
-		if( elen > parent->udt.natalign ) then
-			parent->udt.natalign = elen
+			'' Determine the real padding that should be used
+			dim bitpad as integer
+			if( bits > 0 ) then
+				'' Bitfield
+				symbSetUdtHasBitfield( parent )
+				if( hBitfieldNeedsNewAllocationUnit( parent, dtype, bits, bitpad_for_normal_align ) ) then
+					'' Align bitfield to next allocation unit
+					bitpad = bitpad_for_normal_align
+				else
+					'' Add bitfield behind previous field
+					bitpad = 0
+				end if
+			else
+				'' Normal field
+				bitpad = bitpad_for_normal_align
+			end if
+
+			hIncreaseUdtSize( parent, bitpad )
+			bitpos = parent->udt.bitpos
 		end if
 	end if
 
@@ -442,22 +442,35 @@ function symbAddField _
 		exit function
 	end if
 
+	'' dtype length in bytes (for bitfields this is typically not the same
+	'' as the bitfield's size in bits)
 	sym->lgt = lgt
-	sym->ofs = offset
 	symbVarInitFields( sym )
 	symbVarInitArrayDimensions( sym, dimensions, dTB() )
+	sym->var_.bits = bits
+	sym->var_.bitpos = bitpos
+	hUpdateFieldOffset( sym )
+
 	if( desc ) then
+		'' Fake dynamic array field: Link to the descriptor field.
 		sym->var_.array.desc = desc
 		sym->var_.array.desctype = desc->subtype
 		desc->var_.desc.array = sym  '' desc's backlink
 
 		symbSetTypeIniTree( desc, astBuildArrayDescIniTree( desc, sym, NULL ) )
-	end if
-	sym->var_.bitpos = parent->udt.bitpos
-	sym->var_.bits = bits
+	else
+		'' Real field: update parent struct/union size
+		'' (doing this after calling symbVarInitArrayDimensions(),
+		'' so we can use symbGetArrayElements())
+		dim bitlen as longint
+		if( bits > 0 ) then
+			bitlen = bits
+		else
+			bitlen = lgt * symbGetArrayElements( sym ) * 8
+		end if
 
-	'' multiple len by all array elements (if any)
-	lgt *= symbGetArrayElements( sym )
+		hIncreaseUdtSizeOrUpdateUnion( parent, bitlen )
+	end if
 
 	'' Dynamic array? Same restrictions as STRINGs. No need to check the
 	'' array's dtype because only the descriptor will be included in the
@@ -517,30 +530,8 @@ function symbAddField _
 		symbSetUDTHasPtrField( base_parent )
 	end if
 
-	'' Union?
 	if( symbGetUDTIsUnion( parent ) ) then
 		symbSetIsUnionField( sym )
-
-		'' All fields start at offset 0 again; bitfield bitpos never increases
-		assert( parent->ofs = 0 )
-		assert( parent->udt.bitpos = 0 )
-
-		if( alloc_field ) then
-			'' Union's size is the max field size
-			if( parent->lgt < lgt ) then
-				parent->lgt = lgt
-			end if
-		end if
-	else
-		'' Update struct size, if a new (non-fake) field was started
-		if( alloc_field ) then
-			offset += lgt
-			parent->ofs = offset
-			parent->lgt = offset
-		end if
-
-		'' Update bitpos if non-zero
-		parent->udt.bitpos += bits
 	end if
 
 	sym->parent = parent
@@ -556,14 +547,10 @@ sub symbInsertInnerUDT _
 
 	dim as FBSYMBOL ptr fld = any
 	dim as FBSYMBOLTB ptr symtb = any
-	dim as integer pad = any
 
 	if( symbGetUDTIsUnion( parent ) = FALSE ) then
 		'' calc padding (should be aligned like if an UDT field was being added)
-		pad = hCalcPadding( parent->ofs, parent->udt.align, FB_DATATYPE_STRUCT, inner )
-		if( hCheckUDTSize( parent->ofs, 0, pad ) ) then
-			parent->ofs += pad
-		end if
+		hIncreaseUdtSize( parent, hCalcPaddingBits( parent->udt.bitpos, parent->udt.align, FB_DATATYPE_STRUCT, inner ) )
 	end if
 
     '' move the nodes from inner to parent
@@ -593,7 +580,10 @@ sub symbInsertInnerUDT _
 		if( symbGetUDTIsUnion( parent ) ) then
 			symbSetIsUnionField( fld )
 		else
-			fld->ofs += parent->ofs
+			'' All field offsets are now relative to the parent UDT,
+			'' not just the inner UDT anymore.
+			fld->var_.bitpos += parent->udt.bitpos
+			hUpdateFieldOffset( fld )
 		end if
 
 		fld = fld->next
@@ -601,25 +591,9 @@ sub symbInsertInnerUDT _
 
     parent->udt.ns.symtb.tail = inner->udt.ns.symtb.tail
 
-	'' struct? update ofs + len
-	if( symbGetUDTIsUnion( parent ) = FALSE ) then
-		parent->ofs += inner->lgt
-		parent->lgt = parent->ofs
-	'' union.. update len, if bigger
-	else
-		parent->ofs = 0
-		if( inner->lgt > parent->lgt ) then
-			parent->lgt = inner->lgt
-		end if
-	end if
+	hIncreaseUdtSizeOrUpdateUnion( parent, inner->udt.bitpos )
 
-	'' update the natural alignment
-	if( inner->udt.natalign > parent->udt.natalign ) then
-		parent->udt.natalign = inner->udt.natalign
-	end if
-
-    '' reset bitfield
-    parent->udt.bitpos = 0
+	hUpdateUdtNaturalAlignment( parent, inner->udt.natalign )
 
     '' remove from inner udt list
     inner->udt.ns.symtb.head = NULL
@@ -772,7 +746,6 @@ sub symbStructEnd _
 	)
 
 	dim as SYMBDEFAULTMEMBERS defaultmembers = any
-	dim as integer pad = any
 
 	'' end nesting?
 	if( isnested ) then
@@ -782,12 +755,9 @@ sub symbStructEnd _
 	'' save length without the tail padding added below
 	sym->udt.unpadlgt = sym->lgt
 
-	'' Add tail padding bytes, i.e. round up the structure size to match
-	'' the alignment of the largest natural field.
-	pad = hCalcPadding( sym->lgt, sym->udt.align, FB_DATATYPE_STRUCT, sym )
-	if( hCheckUDTSize( sym->lgt, 0, pad ) ) then
-		sym->lgt += pad
-	end if
+	'' Add tail padding bytes, as if we would append the struct to itself,
+	'' i.e. round up the struct/union size to its own alignment requirement.
+	hIncreaseUdtSize( sym, hCalcPaddingBits( sym->udt.bitpos, sym->udt.align, FB_DATATYPE_STRUCT, sym ) )
 
 	'' Declare implicit members (but don't implement them yet)
 	symbUdtDeclareDefaultMembers( defaultmembers, sym )
@@ -944,6 +914,20 @@ function symbUdtGetNextInitableField( byval sym as FBSYMBOL ptr ) as FBSYMBOL pt
 	loop
 
 	function = sym
+end function
+
+'' Find the last field (skipping over methods etc.)
+private function symbUdtGetLastField( byval udt as FBSYMBOL ptr ) as FBSYMBOL ptr
+	dim as FBSYMBOL ptr fld = any
+	assert( symbIsStruct( udt ) )
+	fld = udt->udt.ns.symtb.tail
+	while( fld )
+		if( symbIsField( fld ) ) then
+			exit while
+		end if
+		fld = fld->prev
+	wend
+	function = fld
 end function
 
 '' Check whether s is derived from baseSym, and if so, how many levels separate

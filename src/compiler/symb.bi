@@ -439,10 +439,15 @@ type FBS_STRUCT
 	
 	base			as FBSYMBOL_ ptr			'' base class
 	anonparent		as FBSYMBOL_ ptr
-	natalign		as integer					'' UDT's natural alignment based on largest natural field alignment
+
+	'' Represents the current struct/union size in bits
+	'' structs: used to calculate the layout as fields are allocated
+	'' unions: holds the bitlen of the largest [bit]field
+	bitpos			as longint
+
 	unpadlgt		as longint					'' unpadded len
+	natalign		as integer					'' UDT's natural alignment based on largest natural field alignment
 	options			as short					'' FB_UDTOPT
-	bitpos			as ubyte
 	align			as ubyte
 
 	'' real type used to return this UDT from functions
@@ -644,8 +649,8 @@ type FBS_VAR
 	stmtnum			as integer					'' can't use colnum as it's unreliable
 	align			as integer					'' 0 = use default alignment
 	data			as FBVAR_DATA				'' used with DATA stmts
-	bitpos			as integer  '' bitfields only: bit offset in container field
-	bits			as integer  '' bitfields only: size in bits
+	bitpos			as longint  '' fields only: absolute offset in bits
+	bits			as integer  '' fields only: size in bits (1..64) if it's a bitfield, or 0
 end type
 
 '' namespace
@@ -691,7 +696,19 @@ type FBSYMBOL
 	mangling		as short 					'' FB_MANGLING
 
 	lgt			as longint
-	ofs			as longint					'' for local vars, args, UDT's and fields
+
+	''
+	'' Byte offsets for local vars, args, UDT's and fields
+	''
+	'' bitfields: always 0, because they're not always aligned at byte
+	'' boundaries, and thus a byte offset would be useless.
+	'' Instead, the bit offset is stored in var_.bitpos.
+	''
+	'' structs/unions: byte offset corresponding to the size stored in
+	'' udt.bitpos while fields are being allocated. May be rounded down when
+	'' allocating bitfields.
+	''
+	ofs			as longint
 
 	union
 		var_		as FBS_VAR
@@ -2142,8 +2159,7 @@ declare function symbGetUDTBaseLevel _
 #define symbFieldIsBitfield( s )     ((s)->var_.bits > 0)
 #define symbIsBitfield( s ) _
 	iif( symbIsField( s ), symbFieldIsBitfield( s ), FALSE )
-#define symbGetFieldBitOffset( fld ) _
-	((fld)->ofs * 8 + iif( (fld)->var_.bits > 0, (fld)->var_.bitpos, 0 ))
+#define symbGetFieldBitOffset( fld ) ((fld)->var_.bitpos)
 #define symbGetFieldBitLength( fld ) _
 	iif( (fld)->var_.bits > 0, _
 		clngint( (fld)->var_.bits ), _ '' clngint needed for older versions of fbc
@@ -2484,6 +2500,7 @@ declare function typeDump _
 ''  symbTrace(b), "(with this)"
 #define symbTrace( s ) print __FUNCTION__ + "(" & __LINE__ & "): "; symbDump( s )
 declare function symbDump( byval s as FBSYMBOL ptr ) as string
+declare sub symbDumpStruct( byval udt as FBSYMBOL ptr )
 declare sub symbDumpNamespace( byval ns as FBSYMBOL ptr )
 declare sub symbDumpChain( byval chain_ as FBSYMCHAIN ptr )
 
