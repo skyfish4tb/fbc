@@ -411,6 +411,15 @@ function symbAddField _
 				bitpad = bitpad_for_normal_align
 			end if
 
+			'' TODO: this is wrong at least for "long long" bitfields, which have weird rules...
+			'' from clang:
+			''   if ((FieldOffset & (FieldAlign-1)) + FieldSize > TypeSize)
+			''       FieldOffset = llvm::RoundUpToAlignment(FieldOffset, FieldAlign);
+			''
+			'' with "long long" on 32bit x86: FieldAlign=32, TypeSize=64
+			'' 
+
+
 			hIncreaseUdtSize( parent, bitpad )
 			bitpos = parent->udt.bitpos
 		end if
@@ -786,6 +795,8 @@ sub symbStructEnd _
 	if( symb.fwdrefcnt > 0 ) then
 		symbCheckFwdRef( sym )
 	end if
+
+	symbDumpStruct( sym )
 
 end sub
 
