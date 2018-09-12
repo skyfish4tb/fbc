@@ -94,7 +94,9 @@ enum FB_COMPOPT
 	FB_COMPOPT_SHOWINCLUDES         '' boolean: -showincludes
 
 	FB_COMPOPTIONS
-end enum
+	FB_COMPOPT_FIXDEBUGINFO			  '' boolean: Fix Lines Debug Informations.
+	FB_COMPOPT_BUILDBYCSTYLE        '' boolean: Case sensitive for Build APP.
+End enum
 
 '' pedantic checks
 enum FB_PDCHECK
@@ -265,7 +267,9 @@ type FBCMMLINEOPT
 	stacksize       as integer
 	objinfo         as integer
 	showincludes    as integer
-end type
+	fixdebuginfo    as integer              ''boolean: Fix Debug Informations.
+	buildbycstyle   as integer              ''boolean: Case sensitive for Build APP. 
+End type
 
 '' features allowed in the selected language
 enum FB_LANG_OPT

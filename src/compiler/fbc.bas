@@ -1881,6 +1881,10 @@ private sub handleOpt(byval optid as integer, byref arg as string)
 		select case( lcase( arg ) )
 		case "gosub-setjmp"
 			fbSetOption( FB_COMPOPT_GOSUBSETJMP, TRUE )
+		Case "fixdebug"
+			fbSetOption( FB_COMPOPT_FIXDEBUGINFO, TRUE )
+		Case "cstyle"
+			fbSetOption( FB_COMPOPT_BUILDBYCSTYLE, TRUE )
 		case else
 			hFatalInvalidOption( arg )
 		end select
@@ -3408,6 +3412,8 @@ private sub hPrintOptions( )
 	print "  -Wl <a,b,c>      Pass options to 'ld'"
 	print "  -x <file>        Set output executable/library file name"
 	print "  -z gosub-setjmp  Use setjmp/longjmp to implement GOSUB"
+	print "  -z fixdebug      Fix Debug Informations"
+	print "  -z cstyle        Use case-sensitive procedure names"
 end sub
 
 private sub hAppendConfigInfo( byref config as string, byval info as zstring ptr )
@@ -3422,7 +3428,7 @@ private sub hPrintVersion( )
 
 	print "FreeBASIC Compiler - Version " + FB_VERSION + _
 		" (" + FB_BUILD_DATE + "), built for " + fbGetHostId( ) + " (" & fbGetHostBits( ) & "bit)"
-	print "Copyright (C) 2004-2016 The FreeBASIC development team."
+	print "Copyright (C) 2004-2016 The FreeBASIC development team.[Modified by Skyfish]"
 
 	#ifdef ENABLE_STANDALONE
 		hAppendConfigInfo( config, "standalone" )

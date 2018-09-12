@@ -1232,7 +1232,13 @@ private sub hMangleProc( byval sym as FBSYMBOL ptr )
 
 	'' @N win32 stdcall suffix
 	if( add_stdcall_suffix ) then
-		mangled += "@" + str( symbProcCalcStdcallSuffixN( sym ) )
+		If(env.clopt.buildbycstyle<>FALSE) Then
+			if Not( ( symbIsConstructor( sym ) ) or  (symbIsDestructor( sym )) ) Then
+				mangled += "@" + str( symbProcCalcStdcallSuffixN( sym ) )			
+			EndIf 
+		Else
+			mangled += "@" + str( symbProcCalcStdcallSuffixN( sym ) )
+		End If 
 
 		if( env.clopt.backend = FB_BACKEND_LLVM ) then
 			'' In LLVM, @ is a special char, identifiers using it must be quoted

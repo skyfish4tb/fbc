@@ -38,7 +38,11 @@ sub parserSetCtx( )
 
 	parser.nspcrec = 0
 
-	parser.mangling = FB_MANGLING_BASIC
+	If(env.clopt.buildbycstyle<>FALSE) Then
+		parser.mangling = FB_MANGLING_STDCALL
+	Else
+		parser.mangling = FB_MANGLING_BASIC
+	End If 
 
 	parser.stmt.cnt = 0
 	parser.stmt.id = 0
