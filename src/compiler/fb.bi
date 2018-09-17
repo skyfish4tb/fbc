@@ -92,11 +92,19 @@ enum FB_COMPOPT
 	FB_COMPOPT_STACKSIZE            '' integer
 	FB_COMPOPT_OBJINFO              '' boolean: write/read .fbctinf sections etc.?
 	FB_COMPOPT_SHOWINCLUDES         '' boolean: -showincludes
+	FB_COMPOPT_MODEVIEW             ''__FB_GUI__
 
 	FB_COMPOPTIONS
 	FB_COMPOPT_FIXDEBUGINFO			  '' boolean: Fix Lines Debug Informations.
 	FB_COMPOPT_BUILDBYCSTYLE        '' boolean: Case sensitive for Build APP.
 End enum
+
+enum FB_MODEVIEW
+	FB_MODEVIEW_CONSOLE = 0
+	FB_MODEVIEW_GUI
+end enum
+
+const FB_DEFAULT_MODEVIEW   =  FB_MODEVIEW_CONSOLE
 
 '' pedantic checks
 enum FB_PDCHECK
@@ -269,7 +277,8 @@ type FBCMMLINEOPT
 	showincludes    as integer
 	fixdebuginfo    as integer              ''boolean: Fix Debug Informations.
 	buildbycstyle   as integer              ''boolean: Case sensitive for Build APP. 
-End type
+	modeview        as FB_MODEVIEW
+end type
 
 '' features allowed in the selected language
 enum FB_LANG_OPT

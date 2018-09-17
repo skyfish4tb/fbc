@@ -480,6 +480,7 @@ sub fbGlobalInit()
 	env.clopt.stacksize     = FB_DEFSTACKSIZE
 	env.clopt.objinfo       = TRUE
 	env.clopt.showincludes  = FALSE
+	env.clopt.modeview      = FB_DEFAULT_MODEVIEW
 
 	hUpdateLangOptions( )
 	hUpdateTargetOptions( )
@@ -575,6 +576,8 @@ sub fbSetOption( byval opt as integer, byval value as integer )
 		env.clopt.fixdebuginfo = value
 	Case FB_COMPOPT_BUILDBYCSTYLE
 		env.clopt.buildbycstyle = value
+	case FB_COMPOPT_MODEVIEW
+		env.clopt.modeview = value
 	end select
 end sub
 
@@ -651,7 +654,8 @@ function fbGetOption( byval opt as integer ) as integer
 		function = env.clopt.fixdebuginfo
 	Case FB_COMPOPT_BUILDBYCSTYLE
 		function = env.clopt.buildbycstyle
-
+	case FB_COMPOPT_MODEVIEW
+		function = env.clopt.modeview
 	case else
 		function = 0
 	end select
