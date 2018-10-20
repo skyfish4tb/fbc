@@ -115,6 +115,7 @@ private sub hMainBegin( )
 		'' argv with the proper dtype...
 		argv->stats or= FB_SYMBSTATS_ARGV
 	end if
+	env.main.hasuserDllMain = false
 
 	'' function main cdecl( byval argc as long, byval argv as zstring ptr ptr ) as long
 	env.main.proc = symbAddProc( proc, NULL, id, FB_DATATYPE_LONG, NULL, _

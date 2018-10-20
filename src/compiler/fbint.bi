@@ -582,6 +582,7 @@ end type
 type FBMAIN
 	proc			as FBSYMBOL ptr
 	initnode		as ASTNODE ptr
+	hasuserDllMain	as integer
 end type
 
 type FB_LANG_CTX

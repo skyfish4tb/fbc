@@ -1003,7 +1003,7 @@ function cProcHeader _
 		symbAddProc( proc, symbUniqueLabel( ), NULL, dtype, subtype, _
 				attrib, mode, FB_SYMBOPT_DECLARING )
 
-	static as zstring * FB_MAXNAMELEN+1 id
+	static as zstring * FB_MAXNAMELEN+1 id , aliasDllMain = "DllEntryPoint"
 	dim as zstring ptr palias = any
 	dim as FBSYMBOL ptr head_proc = any, proc = any, parent = any, subtype = any
 	dim as FBSYMBOL ptr param = any
@@ -1232,6 +1232,20 @@ function cProcHeader _
 
 	'' [ALIAS "id"]
 	palias = cAliasAttribute( )
+	if palias = 0 Then
+		if env.main.hasuserDllMain = false Then
+			select case( tk )
+			case FB_TK_CONSTRUCTOR, FB_TK_DESTRUCTOR, FB_TK_OPERATOR
+			case else
+				select case LCase(id)
+				case "dllentrypoint","dllmain"
+						 palias=@aliasDllMain
+						 env.main.hasuserDllMain = true
+						 Print "Using custom function(DllMain): => " & id
+				end Select
+			end select
+		endif
+	endif
 
 	'' If this is a proc body (not a proto), then we'll open a new scope
 	'' with astProcBegin(), and additionally we may have to re-open the
