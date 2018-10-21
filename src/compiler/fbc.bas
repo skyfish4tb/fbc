@@ -1888,8 +1888,10 @@ private sub handleOpt(byval optid as integer, byref arg as string)
 			fbSetOption( FB_COMPOPT_FIXDEBUGINFO, TRUE )
 		Case "cstyle"
 			fbSetOption( FB_COMPOPT_BUILDBYCSTYLE, TRUE )
+		Case "compatname105"
+			fbSetOption( FB_COMPOPT_COMPATNAME105, TRUE )
 		case else
-			hFatalInvalidOption( arg )
+			errReportEx( FB_ERRMSG_INVALIDCMDOPTION, QUOTE + arg + QUOTE, -1 )
 		end select
 
 	end select
@@ -3417,6 +3419,7 @@ private sub hPrintOptions( )
 	print "  -z gosub-setjmp  Use setjmp/longjmp to implement GOSUB"
 	print "  -z fixdebug      Fix Debug Informations"
 	print "  -z cstyle        Use case-sensitive procedure names"
+	print !"  -z compatname105 The naming function is compatible with fbc v1.05(for \"hMangleBuiltInType\")"
 end sub
 
 private sub hAppendConfigInfo( byref config as string, byval info as zstring ptr )

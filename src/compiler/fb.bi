@@ -95,8 +95,9 @@ enum FB_COMPOPT
 	FB_COMPOPT_MODEVIEW             ''__FB_GUI__
 
 	FB_COMPOPTIONS
-	FB_COMPOPT_FIXDEBUGINFO			  '' boolean: Fix Lines Debug Informations.
+	FB_COMPOPT_FIXDEBUGINFO         '' boolean: Fix Lines Debug Informations.
 	FB_COMPOPT_BUILDBYCSTYLE        '' boolean: Case sensitive for Build APP.
+	FB_COMPOPT_COMPATNAME105        '' The naming function is compatible with fbc v1.05(for "hMangleBuiltInType").
 End enum
 
 enum FB_MODEVIEW
@@ -275,8 +276,9 @@ type FBCMMLINEOPT
 	stacksize       as integer
 	objinfo         as integer
 	showincludes    as integer
-	fixdebuginfo    as integer              ''boolean: Fix Debug Informations.
-	buildbycstyle   as integer              ''boolean: Case sensitive for Build APP. 
+	fixdebuginfo    as integer              '' boolean: Fix Debug Informations.
+	buildbycstyle   as integer              '' boolean: Case sensitive for Build APP. 
+	compatname105   as integer              '' The naming function is compatible with fbc v1.05(for "hMangleBuiltInType").
 	modeview        as FB_MODEVIEW
 end type
 

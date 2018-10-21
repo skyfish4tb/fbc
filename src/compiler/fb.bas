@@ -576,6 +576,8 @@ sub fbSetOption( byval opt as integer, byval value as integer )
 		env.clopt.fixdebuginfo = value
 	Case FB_COMPOPT_BUILDBYCSTYLE
 		env.clopt.buildbycstyle = value
+	Case FB_COMPOPT_COMPATNAME105
+		env.clopt.compatname105 = value
 	case FB_COMPOPT_MODEVIEW
 		env.clopt.modeview = value
 	end select
@@ -654,6 +656,8 @@ function fbGetOption( byval opt as integer ) as integer
 		function = env.clopt.fixdebuginfo
 	Case FB_COMPOPT_BUILDBYCSTYLE
 		function = env.clopt.buildbycstyle
+	Case FB_COMPOPT_COMPATNAME105
+		function = env.clopt.compatname105
 	case FB_COMPOPT_MODEVIEW
 		function = env.clopt.modeview
 	case else

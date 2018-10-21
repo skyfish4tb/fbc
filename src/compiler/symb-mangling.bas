@@ -361,6 +361,7 @@ function hMangleBuiltInType _
 	''    mangle to C++ long, allow 'as [u]long alias "[u]long"' declarations.
 	''    The size of LONG/ULONG does not change, it's 32bit, only the mangling,
 	''    so fbc programs can call C++ code requiring 'long int' arguments.
+	if env.clopt.compatname105 = false then
 
 	if( fbIs64bit( ) and ((env.target.options and FB_TARGETOPT_UNIX) = 0) ) then
 		'' Windows 64bit
@@ -389,6 +390,35 @@ function hMangleBuiltInType _
 		case FB_DATATYPE_UINT    : return @"m"  '' unsigned long
 		end select
 	end if
+
+	else
+		if( fbIs64bit( ) ) then
+			if( env.target.options and FB_TARGETOPT_UNIX ) then
+				select case( dtype )
+				case FB_DATATYPE_INTEGER : return @"l"  '' long
+				case FB_DATATYPE_UINT    : return @"m"  '' unsigned long
+				end select
+			else
+				select case( dtype )
+				case FB_DATATYPE_INTEGER : add_abbrev = TRUE : return @"u7INTEGER"  '' seems like a good choice
+				case FB_DATATYPE_UINT    : add_abbrev = TRUE : return @"u8UINTEGER"
+				end select
+			end if
+
+			select case( dtype )
+			case FB_DATATYPE_LONG    : return @"i"  '' int
+			case FB_DATATYPE_ULONG   : return @"j"  '' unsigned int
+			end select
+		else
+			select case( dtype )
+			case FB_DATATYPE_INTEGER : return @"i"  '' int
+			case FB_DATATYPE_UINT    : return @"j"  '' unsigned int
+			case FB_DATATYPE_LONG    : return @"l"  '' long
+			case FB_DATATYPE_ULONG   : return @"m"  '' unsigned long
+			end select
+		end if
+
+	endIf
 
 	'' dtype should be a FB_DATATYPE by now
 	assert( dtype = typeGetDtOnly( dtype ) )
