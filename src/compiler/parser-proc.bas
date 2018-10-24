@@ -1434,6 +1434,32 @@ function cProcHeader _
 		case FB_TK_OPERATOR
 			proc = symbAddOperator( proc, op, palias, dtype, subtype, attrib, mode )
 		case else
+			'' STATIC?
+			if( hMatch( FB_TK_STATIC ) ) then
+				attrib or= FB_SYMBATTRIB_STATICLOCALS
+			end if
+		
+			'' EXPORT?
+			if( lexGetToken( ) = FB_TK_EXPORT ) then
+				'' ctor or dtor?
+				if( (stats and (FB_SYMBSTATS_GLOBALCTOR or FB_SYMBSTATS_GLOBALDTOR)) <> 0 ) then
+					errReport( FB_ERRMSG_SYNTAXERROR )
+				end if
+		
+				'' private?
+				if( attrib and FB_SYMBATTRIB_PRIVATE ) then
+					errReport( FB_ERRMSG_SYNTAXERROR )
+					attrib and= not FB_SYMBATTRIB_PRIVATE
+				end if
+		
+				lexSkipToken( )
+		
+				fbSetOption( FB_COMPOPT_EXPORT, TRUE )
+				'''''if( fbGetOption( FB_COMPOPT_EXPORT ) = FALSE ) then
+				'''''	errReportWarn( FB_WARNINGMSG_CANNOTEXPORT )
+				'''''end if
+				attrib or= FB_SYMBATTRIB_EXPORT or FB_SYMBATTRIB_PUBLIC
+			end If
 			proc = symbAddProc( proc, @id, palias, dtype, subtype, attrib, mode, FB_SYMBOPT_NONE )
 		end select
 
