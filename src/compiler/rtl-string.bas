@@ -728,10 +728,36 @@
 				( typeSetIsConst( FB_DATATYPE_STRING ), FB_PARAMMODE_BYREF, FALSE ) _
 			} _
  		), _
+		/' function fb_StrInstrI( byval start as const integer, byref src as const string, _
+				byref patt as const string ) as integer '/ _
+		( _
+			@FB_RTL_STRINSTRI, NULL, _
+			FB_DATATYPE_INTEGER, FB_FUNCMODE_FBCALL, _
+			NULL, FB_RTL_OPT_NONE, _
+			3, _
+			{ _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_STRING ), FB_PARAMMODE_BYREF, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_STRING ), FB_PARAMMODE_BYREF, FALSE ) _
+			} _
+ 		), _
 		/' function fb_WstrInstr( byval start as const integer, byval src as const wstring ptr, _
 				byval patt as const wstring ptr ) as integer '/ _
 		( _
 			@FB_RTL_WSTRINSTR, NULL, _
+			FB_DATATYPE_INTEGER, FB_FUNCMODE_FBCALL, _
+			NULL, FB_RTL_OPT_NONE, _
+			3, _
+			{ _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeAddrOf( typeSetIsConst( FB_DATATYPE_WCHAR ) ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeAddrOf( typeSetIsConst( FB_DATATYPE_WCHAR ) ), FB_PARAMMODE_BYVAL, FALSE ) _
+			} _
+ 		), _
+		/' function fb_WstrInstrI( byval start as const integer, byval src as const wstring ptr, _
+				byval patt as const wstring ptr ) as integer '/ _
+		( _
+			@FB_RTL_WSTRINSTRI, NULL, _
 			FB_DATATYPE_INTEGER, FB_FUNCMODE_FBCALL, _
 			NULL, FB_RTL_OPT_NONE, _
 			3, _
@@ -754,10 +780,36 @@
 				( typeSetIsConst( FB_DATATYPE_STRING ), FB_PARAMMODE_BYREF, FALSE ) _
 			} _
  		), _
+		/' function fb_StrInstrIAny( byval start as const integer, byref src as const string, _
+				byref pattern as const string ) as integer '/ _
+		( _
+			@FB_RTL_STRINSTRIANY, NULL, _
+			FB_DATATYPE_INTEGER, FB_FUNCMODE_FBCALL, _
+			NULL, FB_RTL_OPT_NONE, _
+			3, _
+			{ _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_STRING ), FB_PARAMMODE_BYREF, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_STRING ), FB_PARAMMODE_BYREF, FALSE ) _
+			} _
+ 		), _
 		/' function fb_WstrInstrAny( byval start as const integer, byval src as const wstring ptr, _
 				byval pattern as const wstring ptr ) as integer '/ _
 		( _
 			@FB_RTL_WSTRINSTRANY, NULL, _
+			FB_DATATYPE_INTEGER, FB_FUNCMODE_FBCALL, _
+			NULL, FB_RTL_OPT_NONE, _
+			3, _
+			{ _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeAddrOf( typeSetIsConst( FB_DATATYPE_WCHAR ) ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeAddrOf( typeSetIsConst( FB_DATATYPE_WCHAR ) ), FB_PARAMMODE_BYVAL, FALSE ) _
+			} _
+ 		), _
+		/' function fb_WstrInstrIAny( byval start as const integer, byval src as const wstring ptr, _
+				byval pattern as const wstring ptr ) as integer '/ _
+		( _
+			@FB_RTL_WSTRINSTRIANY, NULL, _
 			FB_DATATYPE_INTEGER, FB_FUNCMODE_FBCALL, _
 			NULL, FB_RTL_OPT_NONE, _
 			3, _
@@ -780,10 +832,36 @@
 				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ) _
 			} _
  		), _
+		/' function fb_StrInstrRevI( byref src as const string, byref patt as const string, _
+				byval start as const integer ) as integer '/ _
+		( _
+			@FB_RTL_STRINSTRREVI, NULL, _
+			FB_DATATYPE_INTEGER, FB_FUNCMODE_FBCALL, _
+			NULL, FB_RTL_OPT_NONE, _
+			3, _
+			{ _
+				( typeSetIsConst( FB_DATATYPE_STRING ), FB_PARAMMODE_BYREF, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_STRING ), FB_PARAMMODE_BYREF, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ) _
+			} _
+ 		), _
 		/' function fb_WstrInstrRev( byval src as const wstring ptr, byval patt as const wstring ptr, _
 				byval start as const integer ) as integer '/ _
 		( _
 			@FB_RTL_WSTRINSTRREV, NULL, _
+			FB_DATATYPE_INTEGER, FB_FUNCMODE_FBCALL, _
+			NULL, FB_RTL_OPT_NONE, _
+			3, _
+			{ _
+				( typeAddrOf( typeSetIsConst( FB_DATATYPE_WCHAR ) ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeAddrOf( typeSetIsConst( FB_DATATYPE_WCHAR ) ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ) _
+			} _
+ 		), _
+		/' function fb_WstrInstrRevI( byval src as const wstring ptr, byval patt as const wstring ptr, _
+				byval start as const integer ) as integer '/ _
+		( _
+			@FB_RTL_WSTRINSTRREVI, NULL, _
 			FB_DATATYPE_INTEGER, FB_FUNCMODE_FBCALL, _
 			NULL, FB_RTL_OPT_NONE, _
 			3, _
@@ -806,10 +884,36 @@
 				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ) _
 			} _
  		), _
+		/' function fb_StrInstrRevIAny( byref src as const string, byref patt as const string, _
+				byval start as const integer ) as integer '/ _
+		( _
+			@FB_RTL_STRINSTRREVIANY, NULL, _
+			FB_DATATYPE_INTEGER, FB_FUNCMODE_FBCALL, _
+			NULL, FB_RTL_OPT_NONE, _
+			3, _
+			{ _
+				( typeSetIsConst( FB_DATATYPE_STRING ), FB_PARAMMODE_BYREF, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_STRING ), FB_PARAMMODE_BYREF, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ) _
+			} _
+ 		), _
 		/' function fb_WstrInstrRevAny( byval src as const wstring ptr, byval patt as const wstring ptr, _
 				byval start as const integer ) as integer '/ _
 		( _
 			@FB_RTL_WSTRINSTRREVANY, NULL, _
+			FB_DATATYPE_INTEGER, FB_FUNCMODE_FBCALL, _
+			NULL, FB_RTL_OPT_NONE, _
+			3, _
+			{ _
+				( typeAddrOf( typeSetIsConst( FB_DATATYPE_WCHAR ) ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeAddrOf( typeSetIsConst( FB_DATATYPE_WCHAR ) ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ) _
+			} _
+ 		), _
+		/' function fb_WstrInstrRevIAny( byval src as const wstring ptr, byval patt as const wstring ptr, _
+				byval start as const integer ) as integer '/ _
+		( _
+			@FB_RTL_WSTRINSTRREVIANY, NULL, _
 			FB_DATATYPE_INTEGER, FB_FUNCMODE_FBCALL, _
 			NULL, FB_RTL_OPT_NONE, _
 			3, _
@@ -3462,6 +3566,57 @@ function rtlStrInstr _
 end function
 
 '':::::
+function rtlStrInstrI _
+	( _
+		byval nd_start as ASTNODE ptr, _
+		byval nd_text as ASTNODE ptr, _
+		byval nd_pattern as ASTNODE ptr, _
+        byval search_any as integer _
+    ) as ASTNODE ptr
+
+    dim as ASTNODE ptr proc = any
+    dim as FBSYMBOL ptr f = any
+	dim as integer dtype = any
+
+    function = NULL
+
+	dtype = astGetDataType( nd_text )
+
+	''
+    if( search_any ) then
+		if( dtype <> FB_DATATYPE_WCHAR ) then
+			f = PROCLOOKUP( STRINSTRIANY )
+		else
+			f = PROCLOOKUP( WSTRINSTRIANY )
+		end if
+    else
+		if( dtype <> FB_DATATYPE_WCHAR ) then
+			f = PROCLOOKUP( STRINSTRI )
+		else
+			f = PROCLOOKUP( WSTRINSTRI )
+		end if
+    end if
+
+    proc = astNewCALL( f )
+
+    ''
+    if( astNewARG( proc, nd_start ) = NULL ) then
+    	exit function
+    end if
+
+    if( astNewARG( proc, nd_text ) = NULL ) then
+    	exit function
+    end if
+
+    if( astNewARG( proc, nd_pattern ) = NULL ) then
+    	exit function
+    end if
+
+    function = proc
+
+end function
+
+'':::::
 function rtlStrInstrRev _
 	( _
 		byval nd_start as ASTNODE ptr, _
@@ -3490,6 +3645,57 @@ function rtlStrInstrRev _
 			f = PROCLOOKUP( STRINSTRREV )
 		else
 			f = PROCLOOKUP( WSTRINSTRREV )
+		end if
+	end if
+
+	proc = astNewCALL( f )
+
+	if( astNewARG( proc, nd_text ) = NULL ) then
+		exit function
+	end if
+
+	if( astNewARG( proc, nd_pattern ) = NULL ) then
+		exit function
+	end if
+
+	''
+	if( astNewARG( proc, nd_start ) = NULL ) then
+		exit function
+	end if
+
+	function = proc
+
+end function
+
+'':::::
+function rtlStrInstrRevI _
+	( _
+		byval nd_start as ASTNODE ptr, _
+		byval nd_text as ASTNODE ptr, _
+		byval nd_pattern as ASTNODE ptr, _
+		byval search_any as integer _
+	) as ASTNODE ptr
+
+	dim as ASTNODE ptr proc = any
+	dim as FBSYMBOL ptr f = any
+	dim as integer dtype = any
+
+	function = NULL
+
+	dtype = astGetDataType( nd_text )
+
+	''
+	if( search_any ) then
+		if( dtype <> FB_DATATYPE_WCHAR ) then
+			f = PROCLOOKUP( STRINSTRREVIANY )
+		else
+			f = PROCLOOKUP( WSTRINSTRREVIANY )
+		end if
+	else
+		if( dtype <> FB_DATATYPE_WCHAR ) then
+			f = PROCLOOKUP( STRINSTRREVI )
+		else
+			f = PROCLOOKUP( WSTRINSTRREVI )
 		end if
 	end if
 

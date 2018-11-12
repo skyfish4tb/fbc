@@ -179,7 +179,7 @@ function cQuirkFunction(byval sym as FBSYMBOL ptr) as ASTNODE ptr
 
 	case FB_TK_STR, FB_TK_WSTR, FB_TK_MID, FB_TK_STRING, FB_TK_WSTRING, _
 	     FB_TK_CHR, FB_TK_WCHR, _
-	     FB_TK_ASC, FB_TK_INSTR, FB_TK_INSTRREV, _
+	     FB_TK_ASC, FB_TK_INSTR, FB_TK_INSTRI, FB_TK_INSTRREV, FB_TK_INSTRREVI, _
 	     FB_TK_TRIM, FB_TK_RTRIM, FB_TK_LTRIM, _
 	     FB_TK_LCASE, FB_TK_UCASE
 		funcexpr = cStringFunct(tk)

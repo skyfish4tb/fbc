@@ -2,7 +2,7 @@
 
 #include "fb.h"
 
-FBCALL ssize_t fb_StrInstrAny( ssize_t start, FBSTRING *src, FBSTRING *patt )
+FBCALL ssize_t fb_StrInstrIAny( ssize_t start, FBSTRING *src, FBSTRING *patt )
 {
 	ssize_t r;
 
@@ -28,7 +28,7 @@ FBCALL ssize_t fb_StrInstrAny( ssize_t start, FBSTRING *src, FBSTRING *patt )
 			for( ; start != size_src; ++start )
 			{
 				for( i = 0; i != size_patt; ++i )
-					if( pachText[start] == pachPattern[i] )
+					if( FB_CHAREQUAL(pachText[start] , pachPattern[i])!=0 )
 					{
 						r = start;
 						goto exitfor;

@@ -131,6 +131,41 @@
 	#define FB_GRAPHICS_UNLOCK()
 #endif
 
+	static __inline__ char FB_TOLOWER (char pachChar)
+	{
+		if ((pachChar >= 'A') && (pachChar <= 'Z'))
+					return pachChar + 32;
+		return pachChar;
+	}
+
+	static __inline__ int FB_CHAREQUAL (char pachText,char pachChar)
+	{
+		if (pachText == pachChar)
+		{
+				return -1;
+		}
+		else if((pachChar >= 'A') && (pachChar <= 'Z'))
+		{
+				if (pachText - 32 == pachChar)	return  -1;
+		}
+		else if((pachChar >= 'a') && (pachChar <= 'z'))
+		{
+				if (pachText + 32 == pachChar)	return  -1;
+		}
+		return 0;
+	}
+	
+	static __inline__ const void *FB_MEMICHR( const char *pachText, char pachChar, size_t n )
+	{
+			size_t i;
+			char chText = FB_TOLOWER(pachChar);
+			for( i=1; i<=n; ++i ) {
+				if( FB_TOLOWER(pachText[i])==chText )
+					return &pachText[i];
+			}
+			return 0;
+	}
+	
 /* CPU-dependent macros and inline functions */
 #ifdef HOST_X86
     static __inline__ int FB_MEMCMP( const void *p1, const void *p2, size_t len )

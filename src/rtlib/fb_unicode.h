@@ -232,14 +232,78 @@ static __inline__ const FB_WCHAR *fb_wstr_SkipCharRev( const FB_WCHAR *s, ssize_
 	return p;
 }
 
+	static __inline__ int FB_WCHAREQUAL (FB_WCHAR pachText,FB_WCHAR pachChar)
+	{
+		if (pachText == pachChar)
+		{
+				return -1;
+		}
+		else if((pachChar >= 'A') && (pachChar <= 'Z'))
+		{
+				if (pachText - 32 == pachChar)	return  -1;
+		}
+		else if((pachChar >= 'a') && (pachChar <= 'z'))
+		{
+				if (pachText + 32 == pachChar)	return  -1;
+		}
+		return 0;
+	}
+	
+static __inline__ FB_WCHAR * wcsistr (const FB_WCHAR * str1,const FB_WCHAR * str2)
+{
+	FB_WCHAR *cp = (FB_WCHAR *) str1;
+	FB_WCHAR *s1, *s2;
+	if ( !*str2 )return((FB_WCHAR *)str1);
+	while (*cp)
+	{
+		s1 = cp;
+		s2 = (FB_WCHAR *) str2;
+		while (*s1 && *s2)
+		{
+			if(FB_WCHAREQUAL(*s1, *s2)!=0) s1++, s2++;else break;
+		}
+		if (!*s2)return(cp);
+		cp++;
+	}
+	return(NULL);
+}
+	
+static __inline__ size_t wcsicspn (const FB_WCHAR * s,const FB_WCHAR * sset)
+{
+	if ( !*sset )return 0;
+	FB_WCHAR *cp = (FB_WCHAR *) s;
+	FB_WCHAR *s2;
+	while (*cp)
+	{
+		s2 = (FB_WCHAR *) sset;
+		while (*s2)
+		{
+			if(FB_WCHAREQUAL(*cp, *s2)!=0) return ((size_t)cp-(size_t)s)/sizeof(FB_WCHAR);
+			s2++;
+		}
+		cp++;
+	}
+	return 0;
+}
+
 static __inline__ FB_WCHAR *fb_wstr_Instr( const FB_WCHAR *s, const FB_WCHAR *patt )
 {
 	return wcsstr( s, patt );
 }
 
+static __inline__ FB_WCHAR *fb_wstr_InstrI( const FB_WCHAR *s, const FB_WCHAR *patt )
+{
+	return wcsistr( s, patt );
+}
+
 static __inline__ size_t fb_wstr_InstrAny( const FB_WCHAR *s, const FB_WCHAR *sset )
 {
 	return wcscspn( s, sset );
+}
+
+static __inline__ size_t fb_wstr_InstrIAny( const FB_WCHAR *s, const FB_WCHAR *sset )
+{
+	return wcsicspn( s, sset );
 }
 
 static __inline__ int fb_wstr_Compare( const FB_WCHAR *str1, const FB_WCHAR *str2, ssize_t chars )

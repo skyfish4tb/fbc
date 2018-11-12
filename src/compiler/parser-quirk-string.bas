@@ -710,7 +710,7 @@ function cStringFunct(byval tk as FB_TOKEN) as ASTNODE ptr
 
 		function = cStrASC()
 
-	case FB_TK_INSTR
+	case FB_TK_INSTR,FB_TK_INSTRI
 		lexSkipToken( )
 
 		hMatchLPRNT( )
@@ -731,8 +731,11 @@ function cStringFunct(byval tk as FB_TOKEN) as ASTNODE ptr
 			expr1 = astNewCONSTi( 1 )
 		end if
 		hMatchRPRNT( )
-
-		expr1 = rtlStrInstr( expr1, expr2, expr3, is_any )
+		if (tk = FB_TK_INSTR) then
+			expr1 = rtlStrInstr( expr1, expr2, expr3, is_any )
+		else
+			expr1 = rtlStrInstrI( expr1, expr2, expr3, is_any )
+		endif
 		if( expr1 = NULL ) then
 			errReport( FB_ERRMSG_INVALIDDATATYPES )
 			expr1 = astNewCONSTi( 0 )
@@ -740,7 +743,7 @@ function cStringFunct(byval tk as FB_TOKEN) as ASTNODE ptr
 
 		function = expr1
 
-	case FB_TK_INSTRREV
+	case FB_TK_INSTRREV,FB_TK_INSTRREVI
 		lexSkipToken( )
 
 		hMatchLPRNT( )
@@ -755,7 +758,11 @@ function cStringFunct(byval tk as FB_TOKEN) as ASTNODE ptr
 		end if
 		hMatchRPRNT( )
 
-		expr1 = rtlStrInstrRev( expr3, expr1, expr2, is_any )
+		if (tk = FB_TK_INSTRREV) then
+			expr1 = rtlStrInstrRev( expr3, expr1, expr2, is_any )
+		else
+			expr1 = rtlStrInstrRevI( expr3, expr1, expr2, is_any )
+		endif
 		if( expr1 = NULL ) then
 			errReport( FB_ERRMSG_INVALIDDATATYPES )
 			expr1 = astNewCONSTi( 0 )

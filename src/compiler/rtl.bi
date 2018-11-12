@@ -67,9 +67,13 @@
 #define FB_RTL_STRASC 					"fb_ASC"
 #define FB_RTL_STRCHR 					"fb_CHR"
 #define FB_RTL_STRINSTR 				"fb_StrInstr"
+#define FB_RTL_STRINSTRI 				"fb_StrInstrI"
 #define FB_RTL_STRINSTRANY				"fb_StrInstrAny"
+#define FB_RTL_STRINSTRIANY				"fb_StrInstrIAny"
 #define FB_RTL_STRINSTRREV 				"fb_StrInstrRev"
+#define FB_RTL_STRINSTRREVI 			"fb_StrInstrRevI"
 #define FB_RTL_STRINSTRREVANY			"fb_StrInstrRevAny"
+#define FB_RTL_STRINSTRREVIANY			"fb_StrInstrRevIAny"
 #define FB_RTL_STRTRIM 					"fb_TRIM"
 #define FB_RTL_STRTRIMANY 				"fb_TrimAny"
 #define FB_RTL_STRTRIMEX 				"fb_TrimEx"
@@ -114,9 +118,13 @@
 #define FB_RTL_WSTRASC 					"fb_WstrAsc"
 #define FB_RTL_WSTRCHR 					"fb_WstrChr"
 #define FB_RTL_WSTRINSTR 				"fb_WstrInstr"
+#define FB_RTL_WSTRINSTRI 				"fb_WstrInstrI"
 #define FB_RTL_WSTRINSTRANY				"fb_WstrInstrAny"
+#define FB_RTL_WSTRINSTRIANY			"fb_WstrInstrIAny"
 #define FB_RTL_WSTRINSTRREV 			"fb_WstrInstrRev"
+#define FB_RTL_WSTRINSTRREVI 			"fb_WstrInstrRevI"
 #define FB_RTL_WSTRINSTRREVANY			"fb_WstrInstrRevAny"
+#define FB_RTL_WSTRINSTRREVIANY			"fb_WstrInstrRevIAny"
 #define FB_RTL_WSTRTRIM 				"fb_WstrTrim"
 #define FB_RTL_WSTRTRIMANY 				"fb_WstrTrimAny"
 #define FB_RTL_WSTRTRIMEX 				"fb_WstrTrimEx"
@@ -476,9 +484,13 @@ enum FB_RTL_IDX
 	FB_RTL_IDX_STRASC
 	FB_RTL_IDX_STRCHR
 	FB_RTL_IDX_STRINSTR
+	FB_RTL_IDX_STRINSTRI
 	FB_RTL_IDX_STRINSTRANY
+	FB_RTL_IDX_STRINSTRIANY
 	FB_RTL_IDX_STRINSTRREV
+	FB_RTL_IDX_STRINSTRREVI
 	FB_RTL_IDX_STRINSTRREVANY
+	FB_RTL_IDX_STRINSTRREVIANY
 	FB_RTL_IDX_STRTRIM
 	FB_RTL_IDX_STRTRIMANY
 	FB_RTL_IDX_STRTRIMEX
@@ -523,9 +535,13 @@ enum FB_RTL_IDX
 	FB_RTL_IDX_WSTRASC
 	FB_RTL_IDX_WSTRCHR
 	FB_RTL_IDX_WSTRINSTR
+	FB_RTL_IDX_WSTRINSTRI
 	FB_RTL_IDX_WSTRINSTRANY
+	FB_RTL_IDX_WSTRINSTRIANY
 	FB_RTL_IDX_WSTRINSTRREV
+	FB_RTL_IDX_WSTRINSTRREVI
 	FB_RTL_IDX_WSTRINSTRREVANY
+	FB_RTL_IDX_WSTRINSTRREVIANY
 	FB_RTL_IDX_WSTRTRIM
 	FB_RTL_IDX_WSTRTRIMANY
 	FB_RTL_IDX_WSTRTRIMEX
@@ -1059,7 +1075,23 @@ declare function rtlStrInstr _
 		byval search_any as integer _
 	) as ASTNODE ptr
 
+declare function rtlStrInstrI _
+	( _
+		byval nd_start as ASTNODE ptr, _
+		byval nd_text as ASTNODE ptr, _
+		byval nd_pattern as ASTNODE ptr, _
+		byval search_any as integer _
+	) as ASTNODE ptr
+
 declare function rtlStrInstrRev _
+	( _
+		byval nd_start as ASTNODE ptr, _
+		byval nd_text as ASTNODE ptr, _
+		byval nd_pattern as ASTNODE ptr, _
+		byval search_any as integer _
+	) as ASTNODE ptr
+
+declare function rtlStrInstrRevI _
 	( _
 		byval nd_start as ASTNODE ptr, _
 		byval nd_text as ASTNODE ptr, _

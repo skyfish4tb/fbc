@@ -276,9 +276,9 @@ type FBCMMLINEOPT
 	stacksize       as integer
 	objinfo         as integer
 	showincludes    as integer
-	fixdebuginfo    as integer              '' boolean: Fix Debug Informations.
-	buildbycstyle   as integer              '' boolean: Case sensitive for Build APP. 
-	compatname105   as integer              '' The naming function is compatible with fbc v1.05(for "hMangleBuiltInType").
+	fixdebuginfo    as integer              ''boolean: Fix Debug Informations.
+	buildbycstyle   as integer              ''boolean: Case sensitive for Build APP. 
+	compatname105   as integer              ''The naming function is compatible with fbc v1.05(for "hMangleBuiltInType").
 	modeview        as FB_MODEVIEW
 end type
 
