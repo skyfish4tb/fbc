@@ -1,6 +1,6 @@
 /* instrany function */
 
-#include "fb.h"
+#include "../rtlib/fb.h"
 
 FBCALL ssize_t fb_StrInstrIAny( ssize_t start, FBSTRING *src, FBSTRING *patt )
 {

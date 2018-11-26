@@ -3192,7 +3192,9 @@ end function
 private sub hAddDefaultLibs( )
 	'' select the right FB rtlib
 	fbcAddDefLib( "fb" + hGetFbLibNameSuffix( ) )
-
+	#ifndef ENABLE_SINGLELIBRARY4FB
+		fbcAddDefLib( "fbEx" + hGetFbLibNameSuffix( ) )
+	#endif
 	'' and the gfxlib, if gfx functions were used
 	if( fbGetOption( FB_COMPOPT_GFX ) ) then
 		fbcAddDefLib( "fbgfx" + hGetFbLibNameSuffix( ) )

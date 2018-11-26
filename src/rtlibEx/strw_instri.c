@@ -1,6 +1,6 @@
 /* instrw function */
 
-#include "fb.h"
+#include "../rtlib/fb.h"
 
 FBCALL ssize_t fb_WstrInstrI( ssize_t start, const FB_WCHAR *src, const FB_WCHAR *patt )
 {

@@ -1,6 +1,6 @@
 /* instrrev function */
 
-#include "fb.h"
+#include "../rtlib/fb.h"
 
 #if 0 /* FIXME: implementation is bugged somewhere, missing some matches */
 static ssize_t fb_hFindBM

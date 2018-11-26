@@ -1,6 +1,6 @@
 /* instrrev function */
 
-#include "fb.h"
+#include "../rtlib/fb.h"
 
 FBCALL ssize_t fb_StrInstrRevIAny( FBSTRING *src, FBSTRING *patt, ssize_t start )
 {

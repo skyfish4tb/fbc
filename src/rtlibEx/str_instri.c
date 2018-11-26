@@ -1,6 +1,6 @@
 /* instr function */
 
-#include "fb.h"
+#include "../rtlib/fb.h"
 
 #if 0
 /** Searches for a sub-string using the Quick Search algorithm.
