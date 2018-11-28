@@ -1,10 +1,9 @@
-/* trim$ ANY function */
+/* rtrim$ ANY function */
 
-#include "fb.h"
+#include "../rtlib/fb.h"
 
-FBCALL FBSTRING *fb_TrimAny( FBSTRING *src, FBSTRING *pattern )
+FBCALL FBSTRING *fb_RTrimIAny( FBSTRING *src, FBSTRING *pattern )
 {
-    const char *pachText = NULL;
 	FBSTRING *dst;
 	ssize_t len;
 
@@ -19,23 +18,15 @@ FBCALL FBSTRING *fb_TrimAny( FBSTRING *src, FBSTRING *pattern )
 	len = 0;
 	if( src->data != NULL )
     {
-        ssize_t len_pattern = ((pattern != NULL) && (pattern->data != NULL)? FB_STRSIZE( pattern ) : 0);
-        pachText = src->data;
+        const char *pachText = src->data;
+		ssize_t len_pattern = ((pattern != NULL) && (pattern->data != NULL)? FB_STRSIZE( pattern ) : 0);
         len = FB_STRSIZE( src );
 		if( len_pattern != 0 )
 		{
 			while ( len != 0 )
 	        {
-	            if( FB_MEMCHR( pattern->data, *pachText, len_pattern )==NULL )
-	                break;
-
 	            --len;
-	            ++pachText;
-			}
-			while ( len != 0 )
-	        {
-	            --len;
-	            if( FB_MEMCHR( pattern->data, pachText[len], len_pattern )==NULL ) 
+	            if( FB_MEMICHR( pattern->data, pachText[len], len_pattern )==NULL ) 
 	            {
 	                ++len;
 	                break;
@@ -51,7 +42,7 @@ FBCALL FBSTRING *fb_TrimAny( FBSTRING *src, FBSTRING *pattern )
 		if( dst != NULL )
 		{
 			/* simple copy */
-			fb_hStrCopy( dst->data, pachText, len );
+			fb_hStrCopy( dst->data, src->data, len );
 		}
 		else
 			dst = &__fb_ctx.null_desc;
@@ -61,7 +52,7 @@ FBCALL FBSTRING *fb_TrimAny( FBSTRING *src, FBSTRING *pattern )
 
 	/* del if temp */
 	fb_hStrDelTemp_NoLock( src );
-    fb_hStrDelTemp_NoLock( pattern );
+	fb_hStrDelTemp_NoLock( pattern );
 
    	FB_STRUNLOCK();
 

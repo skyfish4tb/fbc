@@ -1,8 +1,12 @@
-/* trim$ ANY function */
+/* ltrim$ ANY function */
 
-#include "fb.h"
+#include "../rtlib/fb.h"
 
-FBCALL FBSTRING *fb_TrimAny( FBSTRING *src, FBSTRING *pattern )
+FBCALL FBSTRING *fb_LTrimIAny 
+	( 
+		FBSTRING *src, 
+		FBSTRING *pattern 
+	)
 {
     const char *pachText = NULL;
 	FBSTRING *dst;
@@ -26,20 +30,10 @@ FBCALL FBSTRING *fb_TrimAny( FBSTRING *src, FBSTRING *pattern )
 		{
 			while ( len != 0 )
 	        {
-	            if( FB_MEMCHR( pattern->data, *pachText, len_pattern )==NULL )
+	           if( FB_MEMICHR( pattern->data, *pachText, len_pattern )==NULL )
 	                break;
-
 	            --len;
 	            ++pachText;
-			}
-			while ( len != 0 )
-	        {
-	            --len;
-	            if( FB_MEMCHR( pattern->data, pachText[len], len_pattern )==NULL ) 
-	            {
-	                ++len;
-	                break;
-	            }
 			}
 		}
 	}

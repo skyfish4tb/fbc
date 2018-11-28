@@ -770,7 +770,7 @@ function cStringFunct(byval tk as FB_TOKEN) as ASTNODE ptr
 
 		function = expr1
 
-	case FB_TK_TRIM, FB_TK_LTRIM, FB_TK_RTRIM
+	case FB_TK_TRIM, FB_TK_TRIMI, FB_TK_LTRIM, FB_TK_LTRIMI, FB_TK_RTRIM, FB_TK_RTRIMI
 		lexSkipToken( )
 
 		hMatchLPRNT( )
@@ -787,10 +787,16 @@ function cStringFunct(byval tk as FB_TOKEN) as ASTNODE ptr
 		select case (tk)
 		case FB_TK_TRIM
 			expr1 = rtlStrTrim( expr1, expr2, is_any )
+		case FB_TK_TRIMI
+			expr1 = rtlStrTrimI( expr1, expr2, is_any )
 		case FB_TK_LTRIM
 			expr1 = rtlStrLTrim( expr1, expr2, is_any )
+		case FB_TK_LTRIMI
+			expr1 = rtlStrLTrimI( expr1, expr2, is_any )
 		case FB_TK_RTRIM
 			expr1 = rtlStrRTrim( expr1, expr2, is_any )
+		case FB_TK_RTRIMI
+			expr1 = rtlStrRTrimI( expr1, expr2, is_any )
 		end select
 
 		if( expr1 = NULL ) then

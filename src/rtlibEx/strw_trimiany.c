@@ -1,8 +1,8 @@
 /* trimw$ ANY function */
 
-#include "fb.h"
+#include "../rtlib/fb.h"
 
-FBCALL FB_WCHAR *fb_WstrTrimAny ( const FB_WCHAR *src, const FB_WCHAR *pattern )
+FBCALL FB_WCHAR *fb_WstrTrimIAny ( const FB_WCHAR *src, const FB_WCHAR *pattern )
 {
     const FB_WCHAR *pachText = NULL;
 	FB_WCHAR 	*dst;
@@ -20,20 +20,20 @@ FBCALL FB_WCHAR *fb_WstrTrimAny ( const FB_WCHAR *src, const FB_WCHAR *pattern )
 		    if( len_pattern != 0 )
 		    {
 					while ( len != 0 )
-							{
-									if( wcschr( pattern, *pachText )==NULL ) {
-											break;
-									}
-									--len;
-									++pachText;
+					{
+							if( wcsichr( pattern, *pachText )==NULL ) {
+								 break;
+							}
+							--len;
+							++pachText;
 					}
 					while ( len != 0 )
-							{
-									--len;
-									if( wcschr( pattern, pachText[len] )==NULL ) {
-											++len;
-											break;
-									}
+					{
+							--len;
+							if( wcsichr( pattern, pachText[len] )==NULL ) {
+								 ++len;
+								 break;
+							}
 					}
 				}
 	}

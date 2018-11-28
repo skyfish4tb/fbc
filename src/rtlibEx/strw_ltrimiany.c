@@ -1,8 +1,8 @@
 /* ltrimw$ ANY function */
 
-#include "fb.h"
+#include "../rtlib/fb.h"
 
-FBCALL FB_WCHAR *fb_WstrLTrimAny ( const FB_WCHAR *src, const FB_WCHAR *pattern )
+FBCALL FB_WCHAR *fb_WstrLTrimIAny ( const FB_WCHAR *src, const FB_WCHAR *pattern )
 {
     const FB_WCHAR *pachText;
 	FB_WCHAR 	*dst;
@@ -16,17 +16,17 @@ FBCALL FB_WCHAR *fb_WstrLTrimAny ( const FB_WCHAR *src, const FB_WCHAR *pattern 
     {
         ssize_t len_pattern = fb_wstr_Len( pattern );
         pachText = src;
-				if( len_pattern != 0 )
-				{
-					while ( len != 0 )
-							{
-									if( wcschr( pattern, *pachText )==NULL ) {
-											break;
-									}
-									--len;
-									++pachText;
-					}
+		if( len_pattern != 0 )
+		{
+			while ( len != 0 )
+			{
+				if( wcsichr( pattern, *pachText )==NULL ) {
+					break;
 				}
+				--len;
+				++pachText;
+			}
+		}
 	}
 
 	if( len > 0 )

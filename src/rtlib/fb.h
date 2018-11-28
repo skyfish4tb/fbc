@@ -158,14 +158,25 @@
 	static __inline__ const void *FB_MEMICHR( const char *pachText, char pachChar, size_t n )
 	{
 			size_t i;
-			char chText = FB_TOLOWER(pachChar);
-			for( i=1; i<=n; ++i ) {
-				if( FB_TOLOWER(pachText[i])==chText )
+			for( i=0; i<n; ++i ) {
+				if( FB_CHAREQUAL(pachText[i],pachChar)!=0 )
 					return &pachText[i];
 			}
 			return 0;
 	}
-	
+
+	static __inline__ int FB_MEMICMP( const void *p1, const void *p2, size_t len )
+	{
+		size_t i;
+		for( i=1; i<=len; ++i ) {
+			if( FB_CHAREQUAL(*(char* )p1,*(char* )p2)==0 )
+				return (int)(*(char* )p1-*(char* )p2);
+				p1++;
+				p2++;
+		}
+			return 0;
+	}
+
 /* CPU-dependent macros and inline functions */
 #ifdef HOST_X86
     static __inline__ int FB_MEMCMP( const void *p1, const void *p2, size_t len )

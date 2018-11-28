@@ -123,6 +123,23 @@ typedef uint8_t  UTF_8;
     swprintf( buffer, 16+8 + 1, _LC("%.16g"), (double) (num) )
 #endif
 
+static __inline__ int FB_WCHAREQUAL (FB_WCHAR pachText,FB_WCHAR pachChar)
+{
+	if (pachText == pachChar)
+	{
+			return -1;
+	}
+	else if((pachChar >= 'A') && (pachChar <= 'Z'))
+	{
+			if (pachText - 32 == pachChar)	return  -1;
+	}
+	else if((pachChar >= 'a') && (pachChar <= 'z'))
+	{
+			if (pachText + 32 == pachChar)	return  -1;
+	}
+	return 0;
+}
+
 /* Calculate the number of characters between two pointers. */
 static __inline__ ssize_t fb_wstr_CalcDiff( const FB_WCHAR *ini, const FB_WCHAR *end )
 {
@@ -213,6 +230,24 @@ static __inline__ const FB_WCHAR *fb_wstr_SkipChar( const FB_WCHAR *s, ssize_t c
 	return p;
 }
 
+/* Skip all characters (c) from the beginning of the string, max 'n' chars. */
+static __inline__ const FB_WCHAR *fb_wstr_SkipCharI( const FB_WCHAR *s, ssize_t chars, FB_WCHAR c )
+{
+	if( s == NULL )
+		return NULL;
+
+	const FB_WCHAR *p = s;
+	while( chars > 0 )
+	{
+		if( FB_WCHAREQUAL(*p,c) == 0 )
+			return p;
+		++p;
+		--chars;
+	}
+
+	return p;
+}
+
 /* Skip all characters (c) from the end of the string, max 'n' chars. */
 static __inline__ const FB_WCHAR *fb_wstr_SkipCharRev( const FB_WCHAR *s, ssize_t chars, FB_WCHAR c )
 {
@@ -232,23 +267,25 @@ static __inline__ const FB_WCHAR *fb_wstr_SkipCharRev( const FB_WCHAR *s, ssize_
 	return p;
 }
 
-	static __inline__ int FB_WCHAREQUAL (FB_WCHAR pachText,FB_WCHAR pachChar)
+/* Skip all characters (c) from the end of the string, max 'n' chars. */
+static __inline__ const FB_WCHAR *fb_wstr_SkipCharIRev( const FB_WCHAR *s, ssize_t chars, FB_WCHAR c )
+{
+	if( (s == NULL) || (chars <= 0) )
+		return s;
+
+	/* fixed-len's are filled with null's as in PB, strip them too */
+	const FB_WCHAR *p = &s[chars-1];
+	while( chars > 0 )
 	{
-		if (pachText == pachChar)
-		{
-				return -1;
-		}
-		else if((pachChar >= 'A') && (pachChar <= 'Z'))
-		{
-				if (pachText - 32 == pachChar)	return  -1;
-		}
-		else if((pachChar >= 'a') && (pachChar <= 'z'))
-		{
-				if (pachText + 32 == pachChar)	return  -1;
-		}
-		return 0;
+		if( FB_WCHAREQUAL(*p,c) == 0 )
+			return p;
+		--p;
+		--chars;
 	}
-	
+
+	return p;
+}
+
 static __inline__ FB_WCHAR * wcsistr (const FB_WCHAR * str1,const FB_WCHAR * str2)
 {
 	FB_WCHAR *cp = (FB_WCHAR *) str1;
@@ -286,6 +323,17 @@ static __inline__ size_t wcsicspn (const FB_WCHAR * s,const FB_WCHAR * sset)
 	return 0;
 }
 
+static __inline__ FB_WCHAR *wcsichr( const FB_WCHAR *ws, FB_WCHAR c )
+{
+	FB_WCHAR *cp = (FB_WCHAR *) ws;
+	while (*cp)
+	{
+		if(FB_WCHAREQUAL(*cp, c)!=0) return(cp);
+		cp++;
+	}
+	return(NULL);
+}
+
 static __inline__ FB_WCHAR *fb_wstr_Instr( const FB_WCHAR *s, const FB_WCHAR *patt )
 {
 	return wcsstr( s, patt );
@@ -309,4 +357,9 @@ static __inline__ size_t fb_wstr_InstrIAny( const FB_WCHAR *s, const FB_WCHAR *s
 static __inline__ int fb_wstr_Compare( const FB_WCHAR *str1, const FB_WCHAR *str2, ssize_t chars )
 {
 	return wcsncmp( str1, str2, chars );
+}
+
+static __inline__ int fb_wstr_CompareI( const FB_WCHAR *str1, const FB_WCHAR *str2, ssize_t chars )
+{
+	return _wcsnicmp( str1, str2, chars );
 }

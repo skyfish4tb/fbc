@@ -76,13 +76,19 @@
 #define FB_RTL_STRINSTRREVIANY			"fb_StrInstrRevIAny"
 #define FB_RTL_STRTRIM 					"fb_TRIM"
 #define FB_RTL_STRTRIMANY 				"fb_TrimAny"
+#define FB_RTL_STRTRIMIANY 				"fb_TrimIAny"
 #define FB_RTL_STRTRIMEX 				"fb_TrimEx"
+#define FB_RTL_STRTRIMIEX 				"fb_TrimIEx"
 #define FB_RTL_STRRTRIM 				"fb_RTRIM"
 #define FB_RTL_STRRTRIMANY 				"fb_RTrimAny"
+#define FB_RTL_STRRTRIMIANY 			"fb_RTrimIAny"
 #define FB_RTL_STRRTRIMEX 				"fb_RTrimEx"
+#define FB_RTL_STRRTRIMIEX 				"fb_RTrimIEx"
 #define FB_RTL_STRLTRIM 				"fb_LTRIM"
 #define FB_RTL_STRLTRIMANY 				"fb_LTrimAny"
+#define FB_RTL_STRLTRIMIANY 			"fb_LTrimIAny"
 #define FB_RTL_STRLTRIMEX 				"fb_LTrimEx"
+#define FB_RTL_STRLTRIMIEX 				"fb_LTrimIEx"
 #define FB_RTL_STRLCASE2				"fb_StrLcase2"
 #define FB_RTL_STRUCASE2				"fb_StrUcase2"
 #define FB_RTL_STRSWAP 					"fb_StrSwap"
@@ -127,13 +133,19 @@
 #define FB_RTL_WSTRINSTRREVIANY			"fb_WstrInstrRevIAny"
 #define FB_RTL_WSTRTRIM 				"fb_WstrTrim"
 #define FB_RTL_WSTRTRIMANY 				"fb_WstrTrimAny"
+#define FB_RTL_WSTRTRIMIANY 			"fb_WstrTrimIAny"
 #define FB_RTL_WSTRTRIMEX 				"fb_WstrTrimEx"
+#define FB_RTL_WSTRTRIMIEX 				"fb_WstrTrimIEx"
 #define FB_RTL_WSTRRTRIM 				"fb_WstrRTrim"
 #define FB_RTL_WSTRRTRIMANY 			"fb_WstrRTrimAny"
+#define FB_RTL_WSTRRTRIMIANY 			"fb_WstrRTrimIAny"
 #define FB_RTL_WSTRRTRIMEX 				"fb_WstrRTrimEx"
+#define FB_RTL_WSTRRTRIMIEX 			"fb_WstrRTrimIEx"
 #define FB_RTL_WSTRLTRIM 				"fb_WstrLTrim"
 #define FB_RTL_WSTRLTRIMANY 			"fb_WstrLTrimAny"
+#define FB_RTL_WSTRLTRIMIANY 			"fb_WstrLTrimIAny"
 #define FB_RTL_WSTRLTRIMEX 				"fb_WstrLTrimEx"
+#define FB_RTL_WSTRLTRIMIEX 			"fb_WstrLTrimIEx"
 #define FB_RTL_WSTRLCASE2				"fb_WstrLcase2"
 #define FB_RTL_WSTRUCASE2				"fb_WstrUcase2"
 #define FB_RTL_WSTRSWAP 				"fb_WstrSwap"
@@ -493,13 +505,19 @@ enum FB_RTL_IDX
 	FB_RTL_IDX_STRINSTRREVIANY
 	FB_RTL_IDX_STRTRIM
 	FB_RTL_IDX_STRTRIMANY
+	FB_RTL_IDX_STRTRIMIANY
 	FB_RTL_IDX_STRTRIMEX
+	FB_RTL_IDX_STRTRIMIEX
 	FB_RTL_IDX_STRRTRIM
 	FB_RTL_IDX_STRRTRIMANY
+	FB_RTL_IDX_STRRTRIMIANY
 	FB_RTL_IDX_STRRTRIMEX
+	FB_RTL_IDX_STRRTRIMIEX
 	FB_RTL_IDX_STRLTRIM
 	FB_RTL_IDX_STRLTRIMANY
+	FB_RTL_IDX_STRLTRIMIANY
 	FB_RTL_IDX_STRLTRIMEX
+	FB_RTL_IDX_STRLTRIMIEX
 	FB_RTL_IDX_STRLCASE2
 	FB_RTL_IDX_STRUCASE2
 	FB_RTL_IDX_STRSWAP
@@ -544,13 +562,19 @@ enum FB_RTL_IDX
 	FB_RTL_IDX_WSTRINSTRREVIANY
 	FB_RTL_IDX_WSTRTRIM
 	FB_RTL_IDX_WSTRTRIMANY
+	FB_RTL_IDX_WSTRTRIMIANY
 	FB_RTL_IDX_WSTRTRIMEX
+	FB_RTL_IDX_WSTRTRIMIEX
 	FB_RTL_IDX_WSTRRTRIM
 	FB_RTL_IDX_WSTRRTRIMANY
+	FB_RTL_IDX_WSTRRTRIMIANY
 	FB_RTL_IDX_WSTRRTRIMEX
+	FB_RTL_IDX_WSTRRTRIMIEX
 	FB_RTL_IDX_WSTRLTRIM
 	FB_RTL_IDX_WSTRLTRIMANY
+	FB_RTL_IDX_WSTRLTRIMIANY
 	FB_RTL_IDX_WSTRLTRIMEX
+	FB_RTL_IDX_WSTRLTRIMIEX
 	FB_RTL_IDX_WSTRLCASE2
 	FB_RTL_IDX_WSTRUCASE2
 	FB_RTL_IDX_WSTRSWAP
@@ -1106,6 +1130,13 @@ declare function rtlStrTrim _
 		byval is_any as integer _
 	) as ASTNODE ptr
 
+declare function rtlStrTrimI _
+	( _
+		byval nd_text as ASTNODE ptr, _
+		byval nd_pattern as ASTNODE ptr, _
+		byval is_any as integer _
+	) as ASTNODE ptr
+
 declare function rtlStrRTrim _
 	( _
 		byval nd_text as ASTNODE ptr, _
@@ -1113,7 +1144,23 @@ declare function rtlStrRTrim _
 		byval is_any as integer _
 	) as ASTNODE ptr
 
+
+declare function rtlStrRTrimI _
+	( _
+		byval nd_text as ASTNODE ptr, _
+		byval nd_pattern as ASTNODE ptr, _
+		byval is_any as integer _
+	) as ASTNODE ptr
+
 declare function rtlStrLTrim _
+	( _
+		byval nd_text as ASTNODE ptr, _
+		byval nd_pattern as ASTNODE ptr, _
+		byval is_any as integer _
+	) as ASTNODE ptr
+
+
+declare function rtlStrLTrimI _
 	( _
 		byval nd_text as ASTNODE ptr, _
 		byval nd_pattern as ASTNODE ptr, _
