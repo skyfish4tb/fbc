@@ -622,9 +622,11 @@ end function
 ''              |   INSTRREV '(' Expression{str}, "ANY"? Expression{str} (',' Expression{int})? ')'
 ''              |   RTRIM$ '(' Expression{str} (, "ANY" Expression{str} )? ')'
 ''              |   LCASE|UCASE '(' Expression{str} [, Expression{integer}] ')'
+''              |   REPLACE '(' Expression{str}, "ANY"? Expression{str}, Expression{str} (',' Expression{int})? (',' Expression{int})? (',' Expression{int})? ')'
+''              |   SUBSTRCOUNT '(' Expression{str}, "ANY"? Expression{str}, (',' Expression{int})? ')'
 ''
 function cStringFunct(byval tk as FB_TOKEN) as ASTNODE ptr
-	dim as ASTNODE ptr expr1 = any, expr2 = any, expr3 = any
+	dim as ASTNODE ptr expr1 = NULL, expr2 = NULL, expr3 = NULL, expr4 = NULL, expr5 = NULL, expr6 = NULL
 	dim as integer dclass = any, dtype = any, is_any = any, is_wstr = any
 
 	function = NULL
@@ -799,6 +801,69 @@ function cStringFunct(byval tk as FB_TOKEN) as ASTNODE ptr
 			expr1 = rtlStrRTrimI( expr1, expr2, is_any )
 		end select
 
+		if( expr1 = NULL ) then
+			errReport( FB_ERRMSG_INVALIDDATATYPES )
+			expr1 = astNewCONSTi( 0 )
+		end if
+
+		function = expr1
+
+	'' Replace  '(' Expression{str}, "ANY"? Expression{str}, Expression{str} _
+	''           (',' Expression{int})? (',' Expression{int})? (',' Expression{int})? ')'
+	case FB_TK_REPLACE
+		lexSkipToken( )
+
+		hMatchLPRNT( )
+		hMatchExpressionEx( expr1, FB_DATATYPE_STRING )
+		hMatchCOMMA( )
+		is_any = hMatch( FB_TK_ANY )
+		hMatchExpressionEx( expr2, FB_DATATYPE_STRING )
+		hMatchCOMMA( )
+		hMatchExpressionEx( expr3, FB_DATATYPE_STRING )
+		if( hMatch( CHAR_COMMA )) then
+			hMatchExpressionExNoExit( expr4, FB_DATATYPE_INTEGER )
+			if( hMatch( CHAR_COMMA )) then
+				hMatchExpressionExNoExit( expr5, FB_DATATYPE_INTEGER )
+				if( hMatch( CHAR_COMMA )) then
+					hMatchExpressionExNoExit( expr6, FB_DATATYPE_INTEGER )
+				end if
+			end if
+		end if
+		hMatchRPRNT( )
+		
+		if( expr4 = NULL ) then expr4 = astNewCONSTi( 1 )
+		if( expr5 = NULL ) then expr5 = astNewCONSTi( -1 )
+		if( expr6 = NULL ) then expr6 = astNewCONSTi( 0 )
+		
+		expr1 = rtlStrReplace( expr1, expr2, expr3, expr4, expr5, expr6,is_any )
+		if( expr1 = NULL ) then
+			errReport( FB_ERRMSG_INVALIDDATATYPES )
+			expr1 = astNewCONSTi( 0 )
+		end if
+
+		function = expr1
+		
+	'' SUBSTRCOUNT '(' Expression{str}, "ANY"? Expression{str}, (',' Expression{int})? ')'
+	case FB_TK_SUBSTRCOUNT
+		lexSkipToken( )
+
+		hMatchLPRNT( )
+		hMatchExpressionEx( expr1, FB_DATATYPE_STRING )
+		hMatchCOMMA( )
+		is_any = hMatch( FB_TK_ANY )
+		hMatchExpressionEx( expr2, FB_DATATYPE_STRING )
+		if( hMatch( CHAR_COMMA )) then
+			hMatchExpressionExNoExit( expr3, FB_DATATYPE_INTEGER )
+			if( hMatch( CHAR_COMMA )) then
+				hMatchExpressionExNoExit( expr4, FB_DATATYPE_INTEGER )
+			end if
+		end if
+		hMatchRPRNT( )
+		
+		if( expr3 = NULL ) then expr3 = astNewCONSTi( 1 )
+		if( expr4 = NULL ) then expr4 = astNewCONSTi( 0 )
+		
+		expr1 = rtlStrSubStrCount( expr1, expr2, expr3, expr4, is_any )
 		if( expr1 = NULL ) then
 			errReport( FB_ERRMSG_INVALIDDATATYPES )
 			expr1 = astNewCONSTi( 0 )
