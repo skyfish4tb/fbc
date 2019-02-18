@@ -115,6 +115,10 @@ FBCALL char        *fb_hStrSkipChar             ( char *s, ssize_t len, int c );
 FBCALL char        *fb_hStrSkipCharRev          ( char *s, ssize_t len, int c );
 FBCALL char        *fb_hStrSkipCharI            ( char *s, ssize_t len, int c );
 FBCALL char        *fb_hStrSkipCharIRev         ( char *s, ssize_t len, int c );
+FBCALL char        *fb_strstr                   ( char *s1, char *s2 );
+FBCALL char        *fb_strcasestr               ( char *s1, char *s2 );
+FBCALL ssize_t      fb_SubStrCount              ( FBSTRING *src, FBSTRING *patt, ssize_t Start, ssize_t vbTextCompare );
+FBCALL ssize_t      fb_SubStrCountAny           ( FBSTRING *src, FBSTRING *patt, ssize_t Start, ssize_t vbTextCompare );
 
 
 /* public */
@@ -285,6 +289,10 @@ FBCALL FB_WCHAR    *fb_WstrConcat 		( const FB_WCHAR *str1, const FB_WCHAR *str2
 FBCALL FB_WCHAR    *fb_WstrConcatWA     ( const FB_WCHAR *str1, const void *str2, ssize_t str2_size );
 FBCALL FB_WCHAR    *fb_WstrConcatAW     ( const void *str1, ssize_t str1_size, const FB_WCHAR *str2 );
 FBCALL FB_WCHAR    *fb_WstrConcatAssign ( FB_WCHAR *dst, ssize_t dst_chars, const FB_WCHAR *src );
+FBCALL FB_WCHAR    *fb_Wstrstrstr       ( FB_WCHAR *s1, FB_WCHAR *s2 );
+FBCALL FB_WCHAR    *fb_Wstrstrcasestr   ( FB_WCHAR *s1, FB_WCHAR *s2 );
+FBCALL ssize_t      fb_WstrSubStrCount  ( FB_WCHAR *src, FB_WCHAR *patt, ssize_t Start, ssize_t vbTextCompare );
+FBCALL ssize_t      fb_WstrSubStrCountAny ( FB_WCHAR *src, FB_WCHAR *patt, ssize_t Start, ssize_t vbTextCompare );
 
 FBCALL ssize_t      fb_WstrLen          ( FB_WCHAR *str );
 FBCALL int          fb_WstrCompare      ( const FB_WCHAR *str1, const FB_WCHAR *str2 );

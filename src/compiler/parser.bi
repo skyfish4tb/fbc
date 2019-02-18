@@ -945,6 +945,11 @@ declare function hIntegerTypeFromBitSize _
 #endmacro
 
 '':::::
+#macro hMatchExpressionExNoExit(e, dtype)
+	e = cExpression()
+#endmacro
+
+'':::::
 #macro hCheckSuffix(suffix)
 	if( suffix <> FB_DATATYPE_INVALID ) then
 		if( fbLangOptIsSet( FB_LANG_OPT_SUFFIX ) = FALSE ) then

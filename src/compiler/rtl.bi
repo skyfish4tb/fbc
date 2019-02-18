@@ -89,6 +89,10 @@
 #define FB_RTL_STRLTRIMIANY 			"fb_LTrimIAny"
 #define FB_RTL_STRLTRIMEX 				"fb_LTrimEx"
 #define FB_RTL_STRLTRIMIEX 				"fb_LTrimIEx"
+#define FB_RTL_STRREPLACE 				"fb_Replace"
+#define FB_RTL_STRREPLACEANY			"fb_ReplaceAny"
+#define FB_RTL_STRSUBSTRCOUNT 			"fb_SubStrCount"
+#define FB_RTL_STRSUBSTRCOUNTANY		"fb_SubStrCountAny"
 #define FB_RTL_STRLCASE2				"fb_StrLcase2"
 #define FB_RTL_STRUCASE2				"fb_StrUcase2"
 #define FB_RTL_STRSWAP 					"fb_StrSwap"
@@ -146,6 +150,10 @@
 #define FB_RTL_WSTRLTRIMIANY 			"fb_WstrLTrimIAny"
 #define FB_RTL_WSTRLTRIMEX 				"fb_WstrLTrimEx"
 #define FB_RTL_WSTRLTRIMIEX 			"fb_WstrLTrimIEx"
+#define FB_RTL_WSTRREPLACE 				"fb_WstrReplace"
+#define FB_RTL_WSTRREPLACEANY 			"fb_WstrReplaceAny"
+#define FB_RTL_WSTRSUBSTRCOUNT 			"fb_WstrSubStrCount"
+#define FB_RTL_WSTRSUBSTRCOUNTANY		"fb_WstrSubStrCountAny"
 #define FB_RTL_WSTRLCASE2				"fb_WstrLcase2"
 #define FB_RTL_WSTRUCASE2				"fb_WstrUcase2"
 #define FB_RTL_WSTRSWAP 				"fb_WstrSwap"
@@ -518,6 +526,10 @@ enum FB_RTL_IDX
 	FB_RTL_IDX_STRLTRIMIANY
 	FB_RTL_IDX_STRLTRIMEX
 	FB_RTL_IDX_STRLTRIMIEX
+	FB_RTL_IDX_STRREPLACE
+	FB_RTL_IDX_STRREPLACEANY
+	FB_RTL_IDX_STRSUBSTRCOUNT
+	FB_RTL_IDX_STRSUBSTRCOUNTANY
 	FB_RTL_IDX_STRLCASE2
 	FB_RTL_IDX_STRUCASE2
 	FB_RTL_IDX_STRSWAP
@@ -575,6 +587,10 @@ enum FB_RTL_IDX
 	FB_RTL_IDX_WSTRLTRIMIANY
 	FB_RTL_IDX_WSTRLTRIMEX
 	FB_RTL_IDX_WSTRLTRIMIEX
+	FB_RTL_IDX_WSTRREPLACE
+	FB_RTL_IDX_WSTRREPLACEANY
+	FB_RTL_IDX_WSTRSUBSTRCOUNT
+	FB_RTL_IDX_WSTRSUBSTRCOUNTANY
 	FB_RTL_IDX_WSTRLCASE2
 	FB_RTL_IDX_WSTRUCASE2
 	FB_RTL_IDX_WSTRSWAP
@@ -1165,6 +1181,26 @@ declare function rtlStrLTrimI _
 		byval nd_text as ASTNODE ptr, _
 		byval nd_pattern as ASTNODE ptr, _
 		byval is_any as integer _
+	) as ASTNODE ptr
+
+declare function rtlStrReplace _
+	( _
+		byval nd_src as ASTNODE ptr, _
+		byval nd_find as ASTNODE ptr, _
+		byval nd_replaceWith as ASTNODE ptr, _
+		byval nd_start as ASTNODE ptr, _
+		byval nd_Count as ASTNODE ptr, _
+		byval nd_CaseCompare as ASTNODE ptr, _
+		byval search_any as integer _
+	) as ASTNODE ptr
+
+declare function rtlStrSubStrCount _
+	( _
+		byval nd_src as ASTNODE ptr, _
+		byval nd_find as ASTNODE ptr, _
+		byval nd_start as ASTNODE ptr, _
+		byval nd_CaseCompare as ASTNODE ptr, _
+		byval search_any as integer _
 	) as ASTNODE ptr
 
 declare function rtlStrCase _
