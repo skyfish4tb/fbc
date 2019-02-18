@@ -924,7 +924,6 @@ private function hLinkFiles( ) as integer
 		ldcline += hFindLib( "crtend.o" )
 
 	end select
-	
 	if( fbGetOption( FB_COMPOPT_TARGET ) = FB_COMPTARGET_DARWIN ) then
 		ldcline += " -macosx_version_min 10.6"
 	end if
@@ -3214,7 +3213,6 @@ private sub hAddDefaultLibs( )
 			    defined(__FB_NETBSD__)
 				fbcAddDefLibPath( "/usr/X11R6/lib" )
 			#endif
-			
 			#if defined(__FB_DARWIN__) and defined(ENABLE_XQUARTZ)
 				fbcAddDefLibPAth( "/opt/X11/lib" )
 			#endif
@@ -3436,7 +3434,7 @@ private sub hPrintVersion( )
 
 	print "FreeBASIC Compiler - Version " + FB_VERSION + _
 		" (" + FB_BUILD_DATE + "), built for " + fbGetHostId( ) + " (" & fbGetHostBits( ) & "bit)"
-	print "Copyright (C) 2004-2016 The FreeBASIC development team.[Modified by Skyfish]"
+	print "Copyright (C) 2004-2019 The FreeBASIC development team.[Modified by Skyfish]"
 
 	#ifdef ENABLE_STANDALONE
 		hAppendConfigInfo( config, "standalone" )
