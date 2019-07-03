@@ -1249,7 +1249,7 @@
  		), _
 		/' function fb_Replace( byref src as const string, byref find as const string, _
 		         byref replaceWith as const string, byval Start as const integer, byval Count as const integer, _
-		         byval vbTextCompare as const integer) as string '/ _
+		         byval fbCompareType as const integer) as string '/ _
 		( _
 			@FB_RTL_STRREPLACE, NULL, _
 			FB_DATATYPE_STRING, FB_FUNCMODE_FBCALL, _
@@ -1264,9 +1264,27 @@
 				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ) _
 			} _
  		), _
+		/' function fb_Replace2( byref src as const string, byref find1 as const string, byref find2 as const string, _
+		         byref replaceWith as const string, byval Start as const integer, byval Count as const integer, _
+		         byval fbCompareType as const integer) as string '/ _
+		( _
+			@FB_RTL_STRREPLACE2, NULL, _
+			FB_DATATYPE_STRING, FB_FUNCMODE_FBCALL, _
+			NULL, FB_RTL_OPT_NONE, _
+			7, _
+			{ _
+				( typeSetIsConst( FB_DATATYPE_STRING ), FB_PARAMMODE_BYREF, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_STRING ), FB_PARAMMODE_BYREF, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_STRING ), FB_PARAMMODE_BYREF, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_STRING ), FB_PARAMMODE_BYREF, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ) _
+			} _
+ 		), _
 		/' function fb_WstrReplace( byval src as const wstring ptr, byval find as const wstring ptr, _
 		         byval replaceWith as const wstring ptr, byval Start as const integer, byval Count as const integer, _
-		         byval vbTextCompare as const integer) as string '/ _
+		         byval fbCompareType as const integer) as string '/ _
 		( _
 			@FB_RTL_WSTRREPLACE, NULL, _
 			FB_DATATYPE_WCHAR, FB_FUNCMODE_FBCALL, _
@@ -1281,9 +1299,27 @@
 				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ) _
 			} _
  		), _
+		/' function fb_WstrReplace2( byval src as const wstring ptr, byval find1 as const wstring ptr, byval find2 as const wstring ptr, _
+		         byval replaceWith as const wstring ptr, byval Start as const integer, byval Count as const integer, _
+		         byval fbCompareType as const integer) as string '/ _
+		( _
+			@FB_RTL_WSTRREPLACE2, NULL, _
+			FB_DATATYPE_WCHAR, FB_FUNCMODE_FBCALL, _
+			NULL, FB_RTL_OPT_NONE, _
+			7, _
+			{ _
+				( typeAddrOf( typeSetIsConst( FB_DATATYPE_WCHAR ) ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeAddrOf( typeSetIsConst( FB_DATATYPE_WCHAR ) ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeAddrOf( typeSetIsConst( FB_DATATYPE_WCHAR ) ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeAddrOf( typeSetIsConst( FB_DATATYPE_WCHAR ) ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ) _
+			} _
+ 		), _
 		/' function fb_ReplaceAny( byref src as const string, byref find as const string, _
 		         byref replaceWith as const string, byval Start as const integer, byval Count as const integer, _
-		         byval vbTextCompare as const integer) as string '/ _
+		         byval fbCompareType as const integer) as string '/ _
 		( _
 			@FB_RTL_STRREPLACEANY, NULL, _
 			FB_DATATYPE_STRING, FB_FUNCMODE_FBCALL, _
@@ -1298,9 +1334,27 @@
 				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ) _
 			} _
  		), _
+		/' function fb_ReplaceAny2( byref src as const string, byref find1 as const string, byref find2 as const string, _
+		         byref replaceWith as const string, byval Start as const integer, byval Count as const integer, _
+		         byval fbCompareType as const integer) as string '/ _
+		( _
+			@FB_RTL_STRREPLACEANY2, NULL, _
+			FB_DATATYPE_STRING, FB_FUNCMODE_FBCALL, _
+			NULL, FB_RTL_OPT_NONE, _
+			7, _
+			{ _
+				( typeSetIsConst( FB_DATATYPE_STRING ), FB_PARAMMODE_BYREF, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_STRING ), FB_PARAMMODE_BYREF, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_STRING ), FB_PARAMMODE_BYREF, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_STRING ), FB_PARAMMODE_BYREF, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ) _
+			} _
+ 		), _
 		/' function fb_WstrReplaceAny( byval src as const wstring ptr, byval find as const wstring ptr, _
 		         byval replaceWith as const wstring ptr, byval Start as const integer, byval Count as const integer, _
-		         byval vbTextCompare as const integer) as string '/ _
+		         byval fbCompareType as const integer) as string '/ _
 		( _
 			@FB_RTL_WSTRREPLACEANY, NULL, _
 			FB_DATATYPE_WCHAR, FB_FUNCMODE_FBCALL, _
@@ -1315,7 +1369,25 @@
 				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ) _
 			} _
  		), _
-		/' function fb_SubStrCount( byref src as const string, byref find as const string, byval Start as const integer, byval vbTextCompare as const integer) as integer '/ _
+		/' function fb_WstrReplaceAny2( byval src as const wstring ptr, byval find1 as const wstring ptr, byval find2 as const wstring ptr, _
+		         byval replaceWith as const wstring ptr, byval Start as const integer, byval Count as const integer, _
+		         byval fbCompareType as const integer) as string '/ _
+		( _
+			@FB_RTL_WSTRREPLACEANY2, NULL, _
+			FB_DATATYPE_WCHAR, FB_FUNCMODE_FBCALL, _
+			NULL, FB_RTL_OPT_NONE, _
+			7, _
+			{ _
+				( typeAddrOf( typeSetIsConst( FB_DATATYPE_WCHAR ) ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeAddrOf( typeSetIsConst( FB_DATATYPE_WCHAR ) ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeAddrOf( typeSetIsConst( FB_DATATYPE_WCHAR ) ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeAddrOf( typeSetIsConst( FB_DATATYPE_WCHAR ) ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ) _
+			} _
+ 		), _
+		/' function fb_SubStrCount( byref src as const string, byref find as const string, byval Start as const integer, byval fbCompareType as const integer) as integer '/ _
 		( _
 			@FB_RTL_STRSUBSTRCOUNT, NULL, _
 			FB_DATATYPE_INTEGER, FB_FUNCMODE_FBCALL, _
@@ -1328,7 +1400,22 @@
 				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ) _
 			} _
  		), _
-		/' function fb_WstrStrCount( byval src as const wstring ptr, byval find as const wstring ptr, byval Start as const integer, byval vbTextCompare as const integer) as integer '/ _
+		/' function fb_SubStrCount2( byref src as const string, byref find1 as const string, byref find2 as const string, byval Start as const integer, byval fbCompareType as const integer, byref betweensize as integer) as integer '/ _
+		( _
+			@FB_RTL_STRSUBSTRCOUNT2, NULL, _
+			FB_DATATYPE_INTEGER, FB_FUNCMODE_FBCALL, _
+			NULL, FB_RTL_OPT_NONE, _
+			6, _
+			{ _
+				( typeSetIsConst( FB_DATATYPE_STRING ), FB_PARAMMODE_BYREF, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_STRING ), FB_PARAMMODE_BYREF, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_STRING ), FB_PARAMMODE_BYREF, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYREF, FALSE ) _
+			} _
+ 		), _
+		/' function fb_WstrStrCount( byval src as const wstring ptr, byval find as const wstring ptr, byval Start as const integer, byval fbCompareType as const integer) as integer '/ _
 		( _
 			@FB_RTL_WSTRSUBSTRCOUNT, NULL, _
 			FB_DATATYPE_INTEGER, FB_FUNCMODE_FBCALL, _
@@ -1341,7 +1428,22 @@
 				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ) _
 			} _
  		), _
-		/' function fb_SubStrCountAny( byref src as const string, byref find as const string, byval Start as const integer, byval vbTextCompare as const integer) as integer '/ _
+		/' function fb_WstrStrCount2( byval src as const wstring ptr, byval find1 as const wstring ptr, byval find2 as const wstring ptr, byval Start as const integer, byval fbCompareType as const integer, byref betweensize as integer) as integer '/ _
+		( _
+			@FB_RTL_WSTRSUBSTRCOUNT2, NULL, _
+			FB_DATATYPE_INTEGER, FB_FUNCMODE_FBCALL, _
+			NULL, FB_RTL_OPT_NONE, _
+			6, _
+			{ _
+				( typeAddrOf( typeSetIsConst( FB_DATATYPE_WCHAR ) ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeAddrOf( typeSetIsConst( FB_DATATYPE_WCHAR ) ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeAddrOf( typeSetIsConst( FB_DATATYPE_WCHAR ) ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYREF, FALSE ) _
+			} _
+ 		), _
+		/' function fb_SubStrCountAny( byref src as const string, byref find as const string, byval Start as const integer, byval fbCompareType as const integer) as integer '/ _
 		( _
 			@FB_RTL_STRSUBSTRCOUNTANY, NULL, _
 			FB_DATATYPE_INTEGER, FB_FUNCMODE_FBCALL, _
@@ -1354,7 +1456,22 @@
 				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ) _
 			} _
  		), _
-		/' function fb_WstrStrCountAny( byval src as const wstring ptr, byval find as const wstring ptr, byval Start as const integer, byval vbTextCompare as const integer) as integer '/ _
+		/' function fb_SubStrCountAny2( byref src as const string, byref find1 as const string, byref find2 as const string, byval Start as const integer, byval fbCompareType as const integer, byref betweensize as integer) as integer '/ _
+		( _
+			@FB_RTL_STRSUBSTRCOUNTANY2, NULL, _
+			FB_DATATYPE_INTEGER, FB_FUNCMODE_FBCALL, _
+			NULL, FB_RTL_OPT_NONE, _
+			6, _
+			{ _
+				( typeSetIsConst( FB_DATATYPE_STRING ), FB_PARAMMODE_BYREF, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_STRING ), FB_PARAMMODE_BYREF, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_STRING ), FB_PARAMMODE_BYREF, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ),_ 
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYREF, FALSE ) _
+			} _
+ 		), _
+		/' function fb_WstrStrCountAny( byval src as const wstring ptr, byval find as const wstring ptr, byval Start as const integer, byval fbCompareType as const integer) as integer '/ _
 		( _
 			@FB_RTL_WSTRSUBSTRCOUNTANY, NULL, _
 			FB_DATATYPE_INTEGER, FB_FUNCMODE_FBCALL, _
@@ -1365,6 +1482,21 @@
 				( typeAddrOf( typeSetIsConst( FB_DATATYPE_WCHAR ) ), FB_PARAMMODE_BYVAL, FALSE ), _
 				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ), _
 				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ) _
+			} _
+ 		), _
+		/' function fb_WstrStrCountAny2( byval src as const wstring ptr, byval find1 as const wstring ptr, byval find2 as const wstring ptr, byval Start as const integer, byval fbCompareType as const integer, byref betweensize as integer) as integer '/ _
+		( _
+			@FB_RTL_WSTRSUBSTRCOUNTANY2, NULL, _
+			FB_DATATYPE_INTEGER, FB_FUNCMODE_FBCALL, _
+			NULL, FB_RTL_OPT_NONE, _
+			6, _
+			{ _
+				( typeAddrOf( typeSetIsConst( FB_DATATYPE_WCHAR ) ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeAddrOf( typeSetIsConst( FB_DATATYPE_WCHAR ) ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeAddrOf( typeSetIsConst( FB_DATATYPE_WCHAR ) ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYVAL, FALSE ), _
+				( typeSetIsConst( FB_DATATYPE_INTEGER ), FB_PARAMMODE_BYREF, FALSE ) _
 			} _
  		), _
 		/' sub fb_StrSwap( byref str1 as any, byval size1 as const integer, byval fillrem1 as const long, _
@@ -3202,6 +3334,10 @@ function rtlToStr _
     	end if
     end if
 
+	astTryOvlStringCONV( expr )
+
+	dtype = astGetDataType( expr )
+
     ''
 	select case as const astGetDataClass( expr )
 	case FB_DATACLASS_INTEGER
@@ -3301,6 +3437,10 @@ function rtlToWstr _
 			end if
     	end if
     end if
+
+	astTryOvlStringCONV( expr )
+
+	dtype = astGetDataType( expr )
 
 	select case as const astGetDataClass( expr )
 	case FB_DATACLASS_INTEGER
@@ -3448,7 +3588,8 @@ function rtlStrMid _
 
     function = NULL
 
-	''
+	astTryOvlStringCONV( expr1 )
+
     if( astGetDataType( expr1 ) <> FB_DATATYPE_WCHAR ) then
     	proc = astNewCALL( PROCLOOKUP( STRMID ) )
     else
@@ -3485,6 +3626,8 @@ function rtlStrAssignMid _
 	dim as longint dst_len = any
 
     function = NULL
+
+	astTryOvlStringCONV( expr1 )
 
 	''
     if( astGetDataType( expr1 ) <> FB_DATATYPE_WCHAR ) then
@@ -3684,6 +3827,8 @@ function rtlStrAsc _
 
 	function = NULL
 
+	astTryOvlStringCONV( expr )
+
     ''
     if( astGetDataType( expr ) <> FB_DATATYPE_WCHAR ) then
     	proc = astNewCALL( PROCLOOKUP( STRASC ) )
@@ -3780,6 +3925,11 @@ function rtlStrInstr _
 	dim as integer dtype = any
 
     function = NULL
+
+	astTryOvlStringCONV( nd_text )
+	if( nd_pattern ) then
+		astTryOvlStringCONV( nd_pattern )
+	end if
 
 	dtype = astGetDataType( nd_text )
 
@@ -3883,6 +4033,11 @@ function rtlStrInstrRev _
 
 	function = NULL
 
+	astTryOvlStringCONV( nd_text )
+	if( nd_pattern ) then
+		astTryOvlStringCONV( nd_pattern )
+	end if
+
 	dtype = astGetDataType( nd_text )
 
 	''
@@ -3934,6 +4089,11 @@ function rtlStrInstrRevI _
 
 	function = NULL
 
+	astTryOvlStringCONV( nd_text )
+	if( nd_pattern ) then
+		astTryOvlStringCONV( nd_pattern )
+	end if
+
 	dtype = astGetDataType( nd_text )
 
 	''
@@ -3983,6 +4143,11 @@ function rtlStrTrim _
     dim as integer dtype = any
 
     function = NULL
+
+	astTryOvlStringCONV( nd_text )
+	if( nd_pattern ) then
+		astTryOvlStringCONV( nd_pattern )
+	end if
 
 	dtype = astGetDataType( nd_text )
 
@@ -4090,6 +4255,11 @@ function rtlStrRTrim _
 
     function = NULL
 
+	astTryOvlStringCONV( nd_text )
+	if( nd_pattern ) then
+		astTryOvlStringCONV( nd_pattern )
+	end if
+
 	dtype = astGetDataType( nd_text )
 
 	''
@@ -4196,6 +4366,11 @@ function rtlStrLTrim _
 
     function = NULL
 
+	astTryOvlStringCONV( nd_text )
+	if( nd_pattern ) then
+		astTryOvlStringCONV( nd_pattern )
+	end if
+
 	dtype = astGetDataType( nd_text )
 
 	''
@@ -4292,11 +4467,12 @@ end function
 function rtlStrReplace _
 	( _
 		byval nd_src as ASTNODE ptr, _
-		byval nd_find as ASTNODE ptr, _
+		byval nd_find1 as ASTNODE ptr, _
+		byval nd_find2 as ASTNODE ptr, _
 		byval nd_replaceWith as ASTNODE ptr, _
 		byval nd_start as ASTNODE ptr, _
 		byval nd_Count as ASTNODE ptr, _
-		byval nd_vbTextCompare as ASTNODE ptr, _
+		byval nd_fbCompareType as ASTNODE ptr, _
 		byval search_any as integer _
     ) as ASTNODE ptr
 
@@ -4309,18 +4485,34 @@ function rtlStrReplace _
 	dtype = astGetDataType( nd_src )
 
 	''
-    if( search_any ) then
-		if( dtype <> FB_DATATYPE_WCHAR ) then
-			f = PROCLOOKUP( STRREPLACEANY )
-		else
-			f = PROCLOOKUP( WSTRREPLACEANY )
-		end if
-    else
-		if( dtype <> FB_DATATYPE_WCHAR ) then
-			f = PROCLOOKUP( STRREPLACE )
-		else
-			f = PROCLOOKUP( WSTRREPLACE )
-		end if
+    if ( search_any and FB_HasBothAnyKey )<>0 then    
+       if nd_find2 = NULL then
+   		if( dtype <> FB_DATATYPE_WCHAR ) then
+   			f = PROCLOOKUP( STRREPLACEANY )
+   		else
+   			f = PROCLOOKUP( WSTRREPLACEANY )
+   		end if
+       else
+   		if( dtype <> FB_DATATYPE_WCHAR ) then
+   			f = PROCLOOKUP( STRREPLACEANY2 )
+   		else
+   			f = PROCLOOKUP( WSTRREPLACEANY2 )
+   		end if
+       end if
+    else    
+       if nd_find2 = NULL then
+   		if( dtype <> FB_DATATYPE_WCHAR ) then
+   			f = PROCLOOKUP( STRREPLACE )
+   		else
+   			f = PROCLOOKUP( WSTRREPLACE )
+   		end if
+       else
+   		if( dtype <> FB_DATATYPE_WCHAR ) then
+   			f = PROCLOOKUP( STRREPLACE2 )
+   		else
+   			f = PROCLOOKUP( WSTRREPLACE2 )
+   		end if
+       end if
     end if
 
     proc = astNewCALL( f )
@@ -4328,8 +4520,12 @@ function rtlStrReplace _
     if( astNewARG( proc, nd_src ) = NULL ) then
     	exit function
     end if
-
-    if( astNewARG( proc, nd_find ) = NULL ) then
+    
+    if( astNewARG( proc, nd_find1 ) = NULL ) then
+    	exit function
+    end if
+    
+    if nd_find2<>NULL AndAlso( astNewARG( proc, nd_find2 ) = NULL ) then
     	exit function
     end if
     
@@ -4345,7 +4541,7 @@ function rtlStrReplace _
     	exit function
     end if
     
-    if( astNewARG( proc, nd_vbTextCompare ) = NULL ) then
+    if( astNewARG( proc, nd_fbCompareType ) = NULL ) then
     	exit function
     end if
     
@@ -4357,9 +4553,11 @@ end function
 function rtlStrSubStrCount _
 	( _
 		byval nd_src as ASTNODE ptr, _
-		byval nd_find as ASTNODE ptr, _
+		byval nd_find1 as ASTNODE ptr, _
+		byval nd_find2 as ASTNODE ptr, _
 		byval nd_start as ASTNODE ptr, _
-		byval nd_vbTextCompare as ASTNODE ptr, _
+		byval nd_fbCompareType as ASTNODE ptr, _
+		byval nd_betweensize as ASTNODE ptr, _
 		byval search_any as integer _
     ) as ASTNODE ptr
 
@@ -4372,18 +4570,34 @@ function rtlStrSubStrCount _
 	dtype = astGetDataType( nd_src )
 
 	''
-    if( search_any ) then
-		if( dtype <> FB_DATATYPE_WCHAR ) then
-			f = PROCLOOKUP( STRSUBSTRCOUNTANY )
-		else
-			f = PROCLOOKUP( WSTRSUBSTRCOUNTANY )
-		end if
+    if( search_any and FB_HasBothAnyKey )<>0 then
+       if nd_find2 = NULL then
+   		if( dtype <> FB_DATATYPE_WCHAR ) then
+   			f = PROCLOOKUP( STRSUBSTRCOUNTANY )
+   		else
+   			f = PROCLOOKUP( WSTRSUBSTRCOUNTANY )
+   		end if
+       else
+   		if( dtype <> FB_DATATYPE_WCHAR ) then
+   			f = PROCLOOKUP( STRSUBSTRCOUNTANY2 )
+   		else
+   			f = PROCLOOKUP( WSTRSUBSTRCOUNTANY2 )
+   		end if
+       end if
     else
-		if( dtype <> FB_DATATYPE_WCHAR ) then
-			f = PROCLOOKUP( STRSUBSTRCOUNT )
-		else
-			f = PROCLOOKUP( WSTRSUBSTRCOUNT )
-		end if
+       if nd_find2 = NULL then
+   		if( dtype <> FB_DATATYPE_WCHAR ) then
+   			f = PROCLOOKUP( STRSUBSTRCOUNT )
+   		else
+   			f = PROCLOOKUP( WSTRSUBSTRCOUNT )
+   		end if
+       else
+   		if( dtype <> FB_DATATYPE_WCHAR ) then
+   			f = PROCLOOKUP( STRSUBSTRCOUNT2 )
+   		else
+   			f = PROCLOOKUP( WSTRSUBSTRCOUNT2 )
+   		end if
+       end if
     end if
 
     proc = astNewCALL( f )
@@ -4392,7 +4606,11 @@ function rtlStrSubStrCount _
     	exit function
     end if
 
-    if( astNewARG( proc, nd_find ) = NULL ) then
+    if( astNewARG( proc, nd_find1 ) = NULL ) then
+    	exit function
+    end if
+    
+    if nd_find2<>NULL AndAlso( astNewARG( proc, nd_find2 ) = NULL ) then
     	exit function
     end if
     
@@ -4400,7 +4618,10 @@ function rtlStrSubStrCount _
     	exit function
     end if
     
-    if( astNewARG( proc, nd_vbTextCompare ) = NULL ) then
+    if( astNewARG( proc, nd_fbCompareType ) = NULL ) then
+    	exit function
+    end if
+    if nd_betweensize<>NULL AndAlso( astNewARG( proc, nd_betweensize ) = NULL ) then
     	exit function
     end if
     
@@ -4512,6 +4733,8 @@ function rtlStrCase _
 			end if
 		end if
 	end if
+
+	astTryOvlStringCONV( expr )
 
 	if( is_lcase ) then
 		if( astGetDataType( expr ) = FB_DATATYPE_WCHAR ) then

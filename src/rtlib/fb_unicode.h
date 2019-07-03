@@ -143,7 +143,7 @@ static __inline__ int FB_WCHAREQUAL (FB_WCHAR pachText,FB_WCHAR pachChar)
 /* Calculate the number of characters between two pointers. */
 static __inline__ ssize_t fb_wstr_CalcDiff( const FB_WCHAR *ini, const FB_WCHAR *end )
 {
-	return ((intptr_t)end - (intptr_t)ini) / sizeof( FB_WCHAR );
+	return end - ini;
 }
 
 static __inline__ FB_WCHAR *fb_wstr_AllocTemp( ssize_t chars )
@@ -255,12 +255,12 @@ static __inline__ const FB_WCHAR *fb_wstr_SkipCharRev( const FB_WCHAR *s, ssize_
 		return s;
 
 	/* fixed-len's are filled with null's as in PB, strip them too */
-	const FB_WCHAR *p = &s[chars-1];
+	const FB_WCHAR *p = &s[chars];
 	while( chars > 0 )
 	{
-		if( *p != c )
-			return p;
 		--p;
+		if( *p != c )
+			return ++p;
 		--chars;
 	}
 
@@ -274,12 +274,12 @@ static __inline__ const FB_WCHAR *fb_wstr_SkipCharIRev( const FB_WCHAR *s, ssize
 		return s;
 
 	/* fixed-len's are filled with null's as in PB, strip them too */
-	const FB_WCHAR *p = &s[chars-1];
+	const FB_WCHAR *p = &s[chars];
 	while( chars > 0 )
 	{
-		if( FB_WCHAREQUAL(*p,c) == 0 )
-			return p;
 		--p;
+		if( FB_WCHAREQUAL(*p,c) == 0 )
+			return ++p;
 		--chars;
 	}
 
@@ -344,9 +344,49 @@ static __inline__ FB_WCHAR *fb_wstr_InstrI( const FB_WCHAR *s, const FB_WCHAR *p
 	return wcsistr( s, patt );
 }
 
+static __inline__ FB_WCHAR *fb_wstr_InstrAnyptr( const FB_WCHAR *s, const FB_WCHAR *sset )
+{
+	if ( !*sset )return 0;
+	FB_WCHAR *cp = (FB_WCHAR *) s;
+	FB_WCHAR *s2;
+	while (*cp)
+	{
+		s2 = (FB_WCHAR *) sset;
+		while (*s2)
+		{
+			if(*cp==*s2) return cp;
+			s2++;
+		}
+		cp++;
+	}
+	return 0;
+}
+
+static __inline__ FB_WCHAR *fb_wstr_InstrIAnyptr( const FB_WCHAR *s, const FB_WCHAR *sset )
+{
+	if ( !*sset )return 0;
+	FB_WCHAR *cp = (FB_WCHAR *) s;
+	FB_WCHAR *s2;
+	while (*cp)
+	{
+		s2 = (FB_WCHAR *) sset;
+		while (*s2)
+		{
+			if(FB_WCHAREQUAL(*cp, *s2)!=0) return cp;
+			s2++;
+		}
+		cp++;
+	}
+	return 0;
+}
+
 static __inline__ size_t fb_wstr_InstrAny( const FB_WCHAR *s, const FB_WCHAR *sset )
 {
-	return wcscspn( s, sset );
+	FB_WCHAR *p = fb_wstr_InstrAnyptr( s, sset );
+	if( p != NULL )
+		return fb_wstr_CalcDiff( s, p ) + 1;
+	else
+		return 0;
 }
 
 static __inline__ size_t fb_wstr_InstrIAny( const FB_WCHAR *s, const FB_WCHAR *sset )

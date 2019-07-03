@@ -80,6 +80,8 @@ function cLRSetStmt(byval tk as FB_TOKEN) as integer
 		dstexpr = CREATEFAKEID( )
 	end if
 
+	astTryOvlStringCONV( dstexpr )
+
 	dtype1 = astGetDataType( dstexpr )
 	select case as const dtype1
 	case FB_DATATYPE_STRING, FB_DATATYPE_FIXSTR, _
@@ -126,6 +128,8 @@ function cLRSetStmt(byval tk as FB_TOKEN) as integer
 	'' Expression
 	hMatchExpressionEx( srcexpr, dtype1 )
 
+	astTryOvlStringCONV( srcexpr )
+
 	dtype2 = astGetDataType( srcexpr )
 	select case as const dtype2
 	case FB_DATATYPE_STRING, FB_DATATYPE_FIXSTR, _
@@ -163,6 +167,9 @@ function cLRSetStmt(byval tk as FB_TOKEN) as integer
 		function = rtlMemCopyClear( dstexpr, symbGetLen( dst->subtype ), _
 		                            srcexpr, symbGetLen( src->subtype ) )
 	else
+		'' !!! TODO !!! - if udt extends z|wstring, check if operator len()
+		'' was overloaded and pass the length parameters to a separate
+		'' rtlib function
 		function = rtlStrLRSet( dstexpr, srcexpr, is_rset )
 	end if
 
@@ -613,7 +620,69 @@ function cMKXFunct(byval tk as FB_TOKEN) as ASTNODE ptr
 	function = funcexpr
 end function
 
+'':::::
+#define AstNewVarBySymbol(nd_ASTNODE) ASTNEWVAR(astGetSymbol(##nd_ASTNODE))
+function astBuiltCompareType _
+	( _
+		byval nd_comparetype as ASTNODE ptr, _
+        byval is_any as integer _
+    ) as ASTNODE ptr
 
+	if( astIsCONST( nd_comparetype ) ) then
+	   dim as longint p= astConstFlushToInt( nd_comparetype )
+	   if (p and (Not FB_HasKeepAnyKey))<>0 then  
+	      p or= FB_vbTextCompare
+	   EndIf 
+	   is_any or= (p and (FB_HasKeepAnyKey or FB_vbTextCompare))
+      nd_comparetype = astNewCONSTi( is_any )
+	else
+	   dim as FBSYMBOL ptr label = any,label2 = any, tmpvar = any
+		' 1. assign the condition to a temp var 		
+		tmpvar = symbAddTempVar( nd_comparetype->dtype, nd_comparetype->subtype )
+		' tmpvar = nd_comparetype
+		astAdd(astNewASSIGN( astNewVAR( tmpvar ), nd_comparetype, AST_OPOPT_ISINI ))
+		' repatch original expression to just access the temp var
+		nd_comparetype = astNewVAR( tmpvar )
+ 
+		'' if( nd_comparetype <> 0 ) then
+		label = symbAddLabel( NULL )
+		astAdd( astNewBOP( AST_OP_EQ, AstNewVarBySymbol(nd_comparetype), _ 
+		        astNewCONSTi( 0, FB_DATATYPE_UINT ), label, AST_OPOPT_NONE ))
+            
+      		'' if( nd_comparetype and (not FB_HasKeepAnyKey)£© <> 0 ) then
+      		label2 = symbAddLabel( NULL )
+      		astAdd( astNewBOP( AST_OP_EQ, _
+      						   astNewBOP( AST_OP_AND, AstNewVarBySymbol(nd_comparetype), _
+      						   astNewCONSTi(Not FB_HasKeepAnyKey , FB_DATATYPE_UINT) ), _
+      						   astNewCONSTi( 0, FB_DATATYPE_UINT ), label2, AST_OPOPT_NONE ))
+               	   '' nd_comparetype or= FB_vbTextCompare
+               		astAdd(astNewSelfBOP( AST_OP_OR_SELF, AstNewVarBySymbol(nd_comparetype), _
+               		       astNewCONSTi(  FB_vbTextCompare , FB_DATATYPE_UINT)))
+            '' end if	
+            astAdd( astNewLABEL( label2 ) )
+   	   '' nd_comparetype and = (FB_vbTextCompare or FB_HasKeepAnyKey)
+   		astAdd(astNewSelfBOP( AST_OP_AND_SELF, AstNewVarBySymbol(nd_comparetype), _
+   		       astNewCONSTi(  FB_vbTextCompare or FB_HasKeepAnyKey, FB_DATATYPE_UINT)))
+   	'' end if	
+	   astAdd( astNewLABEL( label ) )
+	   'nd_comparetype or = is_any
+		astAdd( astNewSelfBOP( AST_OP_OR_SELF, AstNewVarBySymbol(nd_comparetype), _
+		        astNewCONSTi( is_any, FB_DATATYPE_UINT )))
+	end if
+    function = nd_comparetype
+end function
+
+function CheckIsNumberType ( byval nd_comparetype as ASTNODE ptr  ) as integer
+   select case astGetDataType( nd_comparetype )
+      case 	FB_DATATYPE_BOOLEAN,FB_DATATYPE_BYTE,FB_DATATYPE_UBYTE,FB_DATATYPE_SHORT,_
+            FB_DATATYPE_USHORT,FB_DATATYPE_INTEGER,FB_DATATYPE_UINT,FB_DATATYPE_ENUM,_
+            FB_DATATYPE_LONG,FB_DATATYPE_ULONG,FB_DATATYPE_LONGINT,FB_DATATYPE_ULONGINT, _
+            FB_DATATYPE_SINGLE,FB_DATATYPE_DOUBLE
+            return -1
+      case else
+            return 0
+   end select    
+end function
 '':::::
 '' cStringFunct	=	W|STR$ '(' Expression{bool|int|float|double} ')'
 '' 				|   MID$ '(' Expression ',' Expression (',' Expression)? ')'
@@ -623,10 +692,12 @@ end function
 ''              |   RTRIM$ '(' Expression{str} (, "ANY" Expression{str} )? ')'
 ''              |   LCASE|UCASE '(' Expression{str} [, Expression{integer}] ')'
 ''              |   REPLACE '(' Expression{str}, "ANY"? Expression{str}, Expression{str} (',' Expression{int})? (',' Expression{int})? (',' Expression{int})? ')'
-''              |   SUBSTRCOUNT '(' Expression{str}, "ANY"? Expression{str}, (',' Expression{int})? ')'
+''              |   REPLACE '(' Expression{str}, "ANY"? Expression{str}, "ANY"? Expression{str}, Expression{str} (',' Expression{int})? (',' Expression{int})? (',' Expression{int})? ')'
+''              |   SUBSTRCOUNT '(' Expression{str}, "ANY"? Expression{str}, (',' Expression{int})? ')' (',' Expression{int})? ')'
+''              |   SUBSTRCOUNT '(' Expression{str}, "ANY"? Expression{str}, "ANY"? Expression{str}, (',' Expression{int})? ')' (',' Expression{int})? ')' (',' Expression{int})? ')'
 ''
 function cStringFunct(byval tk as FB_TOKEN) as ASTNODE ptr
-	dim as ASTNODE ptr expr1 = NULL, expr2 = NULL, expr3 = NULL, expr4 = NULL, expr5 = NULL, expr6 = NULL
+	dim as ASTNODE ptr expr1 = NULL, expr2 = NULL, expr3 = NULL, expr4 = NULL, expr5 = NULL, expr6 = NULL, expr7 = NULL
 	dim as integer dclass = any, dtype = any, is_any = any, is_wstr = any
 
 	function = NULL
@@ -810,60 +881,130 @@ function cStringFunct(byval tk as FB_TOKEN) as ASTNODE ptr
 
 	'' Replace  '(' Expression{str}, "ANY"? Expression{str}, Expression{str} _
 	''           (',' Expression{int})? (',' Expression{int})? (',' Expression{int})? ')'
+	'' Replace  '(' Expression{str}, "ANY"? Expression{str}, "ANY"? Expression{str}, Expression{str} _
+	''           (',' Expression{int})? (',' Expression{int})? (',' Expression{int})? ')'
 	case FB_TK_REPLACE
 		lexSkipToken( )
 
 		hMatchLPRNT( )
 		hMatchExpressionEx( expr1, FB_DATATYPE_STRING )
 		hMatchCOMMA( )
-		is_any = hMatch( FB_TK_ANY )
+      is_any = iif(hMatch( FB_TK_ANY ),FB_HasFirstAnyKey,0)
 		hMatchExpressionEx( expr2, FB_DATATYPE_STRING )
 		hMatchCOMMA( )
+      is_any or= iif(hMatch( FB_TK_ANY ),FB_HasSecondAnyKey,0)
 		hMatchExpressionEx( expr3, FB_DATATYPE_STRING )
 		if( hMatch( CHAR_COMMA )) then
-			hMatchExpressionExNoExit( expr4, FB_DATATYPE_INTEGER )
-			if( hMatch( CHAR_COMMA )) then
-				hMatchExpressionExNoExit( expr5, FB_DATATYPE_INTEGER )
-				if( hMatch( CHAR_COMMA )) then
-					hMatchExpressionExNoExit( expr6, FB_DATATYPE_INTEGER )
-				end if
-			end if
+			hMatchExpressionExNoExit( expr4, FB_DATATYPE_STRING )			
+         if( expr4 = NULL ) then 'expr4 = NULL ==> expr5 = NULL
+            expr4 = expr3
+            expr3 = NULL
+            is_any and= (Not FB_HasSecondAnyKey)
+   			if( hMatch( CHAR_COMMA )) then
+   				hMatchExpressionExNoExit( expr6, FB_DATATYPE_INTEGER )
+   				if( hMatch( CHAR_COMMA )) then
+   					hMatchExpressionExNoExit( expr7, FB_DATATYPE_INTEGER )
+   				end if
+   			end if            
+         else
+            select case astGetDataType( expr4 )
+               case FB_DATATYPE_CHAR,FB_DATATYPE_STRING, FB_DATATYPE_FIXSTR, FB_DATATYPE_WCHAR
+            			if( hMatch( CHAR_COMMA )) then
+            				hMatchExpressionExNoExit( expr5, FB_DATATYPE_INTEGER )
+            				if( hMatch( CHAR_COMMA )) then
+            					hMatchExpressionExNoExit( expr6, FB_DATATYPE_INTEGER )
+               				if( hMatch( CHAR_COMMA )) then
+               					hMatchExpressionExNoExit( expr7, FB_DATATYPE_INTEGER )
+               				end if
+            				end if
+            			end if
+               case else
+                  expr5 = expr4
+                  expr4 = expr3
+                  expr3 = NULL
+                  is_any and= (Not FB_HasSecondAnyKey)
+         			if( hMatch( CHAR_COMMA )) then
+         				hMatchExpressionExNoExit( expr6, FB_DATATYPE_INTEGER )
+         				if( hMatch( CHAR_COMMA )) then
+         					hMatchExpressionExNoExit( expr7, FB_DATATYPE_INTEGER )
+         				end if
+         			end if   
+            end select
+         EndIf
+      else 'expr3 <> NULL ==> expr4 
+         expr4 = expr3
+         expr3 = NULL
 		end if
 		hMatchRPRNT( )
-		
-		if( expr4 = NULL ) then expr4 = astNewCONSTi( 1 )
-		if( expr5 = NULL ) then expr5 = astNewCONSTi( -1 )
-		if( expr6 = NULL ) then expr6 = astNewCONSTi( 0 )
-		
-		expr1 = rtlStrReplace( expr1, expr2, expr3, expr4, expr5, expr6,is_any )
-		if( expr1 = NULL ) then
-			errReport( FB_ERRMSG_INVALIDDATATYPES )
-			expr1 = astNewCONSTi( 0 )
-		end if
 
-		function = expr1
+		if( expr4 = NULL ) then expr4 = astNewCONSTz( FB_DATATYPE_STRING )
+		if( expr5 = NULL ) then expr5 = astNewCONSTi( 1 )
+		if( expr6 = NULL ) then expr6 = astNewCONSTi( -1 )
+	   if( expr7 = NULL ) then 
+	      expr7 = astNewCONSTi( is_any )
+	   elseif CheckIsNumberType( expr7 ) then
+	      expr7 = astBuiltCompareType( expr7 , is_any )
+	   endIf
 		
-	'' SUBSTRCOUNT '(' Expression{str}, "ANY"? Expression{str}, (',' Expression{int})? ')'
-	case FB_TK_SUBSTRCOUNT
-		lexSkipToken( )
+      expr1 = rtlStrReplace( expr1, expr2, expr3, expr4, expr5, expr6, expr7,is_any )
+      if( expr1 = NULL ) then
+         errReport( FB_ERRMSG_INVALIDDATATYPES )
+         expr1 = astNewCONSTi( 0 )
+      end if
 
-		hMatchLPRNT( )
-		hMatchExpressionEx( expr1, FB_DATATYPE_STRING )
-		hMatchCOMMA( )
-		is_any = hMatch( FB_TK_ANY )
-		hMatchExpressionEx( expr2, FB_DATATYPE_STRING )
-		if( hMatch( CHAR_COMMA )) then
-			hMatchExpressionExNoExit( expr3, FB_DATATYPE_INTEGER )
-			if( hMatch( CHAR_COMMA )) then
-				hMatchExpressionExNoExit( expr4, FB_DATATYPE_INTEGER )
-			end if
-		end if
-		hMatchRPRNT( )
+      function = expr1
 		
-		if( expr3 = NULL ) then expr3 = astNewCONSTi( 1 )
-		if( expr4 = NULL ) then expr4 = astNewCONSTi( 0 )
-		
-		expr1 = rtlStrSubStrCount( expr1, expr2, expr3, expr4, is_any )
+         '' SUBSTRCOUNT '(' Expression{str}, "ANY"? Expression{str}, (',' Expression{int})? ')'(',' Expression{int})? ')'
+         '' SUBSTRCOUNT '(' Expression{str}, "ANY"? Expression{str}, "ANY"? Expression{str}, (',' Expression{int})? ')'(',' Expression{int})? ')' (',' Expression{int})? ')'
+   case FB_TK_SUBSTRCOUNT
+      lexSkipToken( )
+
+      hMatchLPRNT( )
+      hMatchExpressionEx( expr1, FB_DATATYPE_STRING )
+      hMatchCOMMA( )
+      is_any = iif(hMatch( FB_TK_ANY ),FB_HasFirstAnyKey,0)
+      hMatchExpressionEx( expr2, FB_DATATYPE_STRING )
+      if( hMatch( CHAR_COMMA )) then
+         is_any or= iif(hMatch( FB_TK_ANY ),FB_HasSecondAnyKey,0)
+         hMatchExpressionExNoExit( expr3, FB_DATATYPE_STRING )
+         if( expr3 = NULL ) then'expr3 = NULL ==> expr4 = NULL
+            is_any and= (Not FB_HasSecondAnyKey)
+            if( hMatch( CHAR_COMMA )) then
+               hMatchExpressionExNoExit( expr5, FB_DATATYPE_INTEGER )
+            end if
+         else
+            select case astGetDataType( expr3 )
+               case FB_DATATYPE_CHAR,FB_DATATYPE_STRING, FB_DATATYPE_FIXSTR, FB_DATATYPE_WCHAR
+                     if( hMatch( CHAR_COMMA )) then
+                        hMatchExpressionExNoExit( expr4, FB_DATATYPE_INTEGER )
+                        if( hMatch( CHAR_COMMA )) then
+                           hMatchExpressionExNoExit( expr5, FB_DATATYPE_INTEGER )
+                           if( hMatch( CHAR_COMMA )) then
+                             hMatchExpressionExNoExit( expr6, FB_DATATYPE_INTEGER )
+                           end if
+                        end if
+                     end if
+	                  if( expr6 = NULL ) then expr6 = astNewCONSTi( -1 )
+               case else
+                  expr4 = expr3
+                  expr3 = NULL
+                  is_any and= (Not FB_HasSecondAnyKey)
+                  if( hMatch( CHAR_COMMA )) then
+                    hMatchExpressionExNoExit( expr5, FB_DATATYPE_INTEGER )
+                  end if
+            end select
+         EndIf
+      end if
+      hMatchRPRNT( )
+
+	   if( expr4 = NULL ) then expr4 = astNewCONSTi( 1 )
+	   if( expr5 = NULL ) then 
+	      expr5 = astNewCONSTi( is_any )
+	   elseif CheckIsNumberType( expr5 ) then
+	      expr5 = astBuiltCompareType( expr5 , is_any )
+	   endIf
+	   
+      expr1 = rtlStrSubStrCount( expr1, expr2, expr3, expr4, expr5,expr6, is_any )
 		if( expr1 = NULL ) then
 			errReport( FB_ERRMSG_INVALIDDATATYPES )
 			expr1 = astNewCONSTi( 0 )

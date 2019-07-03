@@ -37,7 +37,7 @@ FBCALL FB_WCHAR *fb_WstrLTrimIEx ( const FB_WCHAR *src, const FB_WCHAR *pattern 
 	if( len > 0 )
 	{
 		/* alloc temp string */
-        dst = fb_wstr_AllocTemp( len );
+		dst = fb_wstr_AllocTemp( len );
 		if( dst != NULL )
 		{
 			/* simple copy */

@@ -90,9 +90,13 @@
 #define FB_RTL_STRLTRIMEX 				"fb_LTrimEx"
 #define FB_RTL_STRLTRIMIEX 				"fb_LTrimIEx"
 #define FB_RTL_STRREPLACE 				"fb_Replace"
+#define FB_RTL_STRREPLACE2 				"fb_Replace2"
 #define FB_RTL_STRREPLACEANY			"fb_ReplaceAny"
+#define FB_RTL_STRREPLACEANY2			"fb_ReplaceAny2"
 #define FB_RTL_STRSUBSTRCOUNT 			"fb_SubStrCount"
+#define FB_RTL_STRSUBSTRCOUNT2 			"fb_SubStrCount2"
 #define FB_RTL_STRSUBSTRCOUNTANY		"fb_SubStrCountAny"
+#define FB_RTL_STRSUBSTRCOUNTANY2		"fb_SubStrCountAny2"
 #define FB_RTL_STRLCASE2				"fb_StrLcase2"
 #define FB_RTL_STRUCASE2				"fb_StrUcase2"
 #define FB_RTL_STRSWAP 					"fb_StrSwap"
@@ -151,9 +155,13 @@
 #define FB_RTL_WSTRLTRIMEX 				"fb_WstrLTrimEx"
 #define FB_RTL_WSTRLTRIMIEX 			"fb_WstrLTrimIEx"
 #define FB_RTL_WSTRREPLACE 				"fb_WstrReplace"
+#define FB_RTL_WSTRREPLACE2 			"fb_WstrReplace2"
 #define FB_RTL_WSTRREPLACEANY 			"fb_WstrReplaceAny"
+#define FB_RTL_WSTRREPLACEANY2 			"fb_WstrReplaceAny2"
 #define FB_RTL_WSTRSUBSTRCOUNT 			"fb_WstrSubStrCount"
+#define FB_RTL_WSTRSUBSTRCOUNT2 		"fb_WstrSubStrCount2"
 #define FB_RTL_WSTRSUBSTRCOUNTANY		"fb_WstrSubStrCountAny"
+#define FB_RTL_WSTRSUBSTRCOUNTANY2		"fb_WstrSubStrCountAny2"
 #define FB_RTL_WSTRLCASE2				"fb_WstrLcase2"
 #define FB_RTL_WSTRUCASE2				"fb_WstrUcase2"
 #define FB_RTL_WSTRSWAP 				"fb_WstrSwap"
@@ -527,9 +535,13 @@ enum FB_RTL_IDX
 	FB_RTL_IDX_STRLTRIMEX
 	FB_RTL_IDX_STRLTRIMIEX
 	FB_RTL_IDX_STRREPLACE
+	FB_RTL_IDX_STRREPLACE2
 	FB_RTL_IDX_STRREPLACEANY
+	FB_RTL_IDX_STRREPLACEANY2
 	FB_RTL_IDX_STRSUBSTRCOUNT
+	FB_RTL_IDX_STRSUBSTRCOUNT2
 	FB_RTL_IDX_STRSUBSTRCOUNTANY
+	FB_RTL_IDX_STRSUBSTRCOUNTANY2
 	FB_RTL_IDX_STRLCASE2
 	FB_RTL_IDX_STRUCASE2
 	FB_RTL_IDX_STRSWAP
@@ -588,9 +600,13 @@ enum FB_RTL_IDX
 	FB_RTL_IDX_WSTRLTRIMEX
 	FB_RTL_IDX_WSTRLTRIMIEX
 	FB_RTL_IDX_WSTRREPLACE
+	FB_RTL_IDX_WSTRREPLACE2
 	FB_RTL_IDX_WSTRREPLACEANY
+	FB_RTL_IDX_WSTRREPLACEANY2
 	FB_RTL_IDX_WSTRSUBSTRCOUNT
+	FB_RTL_IDX_WSTRSUBSTRCOUNT2
 	FB_RTL_IDX_WSTRSUBSTRCOUNTANY
+	FB_RTL_IDX_WSTRSUBSTRCOUNTANY2
 	FB_RTL_IDX_WSTRLCASE2
 	FB_RTL_IDX_WSTRUCASE2
 	FB_RTL_IDX_WSTRSWAP
@@ -917,6 +933,12 @@ enum
 	FB_THREADCALL_PTR
 end enum
 
+#define FB_HasFirstAnyKey  &H10000000
+#define FB_HasSecondAnyKey &H20000000
+#define FB_HasKeepAnyKey   &H40000000
+#define FB_vbTextCompare   &H80000000
+#define FB_HasBothAnyKey   (FB_HasFirstAnyKey or FB_HasSecondAnyKey)
+
 type FB_RTL_PARAMDEF
 	dtype		as FB_DATATYPE
 	mode		as FB_PARAMMODE
@@ -1186,20 +1208,23 @@ declare function rtlStrLTrimI _
 declare function rtlStrReplace _
 	( _
 		byval nd_src as ASTNODE ptr, _
-		byval nd_find as ASTNODE ptr, _
+		byval nd_find1 as ASTNODE ptr, _
+		byval nd_find2 as ASTNODE ptr, _
 		byval nd_replaceWith as ASTNODE ptr, _
 		byval nd_start as ASTNODE ptr, _
 		byval nd_Count as ASTNODE ptr, _
-		byval nd_CaseCompare as ASTNODE ptr, _
+		byval nd_fbCompareType as ASTNODE ptr, _
 		byval search_any as integer _
 	) as ASTNODE ptr
 
 declare function rtlStrSubStrCount _
 	( _
 		byval nd_src as ASTNODE ptr, _
-		byval nd_find as ASTNODE ptr, _
+		byval nd_find1 as ASTNODE ptr, _
+		byval nd_find2 as ASTNODE ptr, _
 		byval nd_start as ASTNODE ptr, _
-		byval nd_CaseCompare as ASTNODE ptr, _
+		byval nd_fbCompareType as ASTNODE ptr, _
+		byval nd_betweensize as ASTNODE ptr, _
 		byval search_any as integer _
 	) as ASTNODE ptr
 

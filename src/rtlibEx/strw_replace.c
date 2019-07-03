@@ -2,82 +2,59 @@
 
 #include "../rtlib/fb.h"
 
-FBCALL FB_WCHAR* fb_WstrReplace(FB_WCHAR* src, FB_WCHAR* find, FB_WCHAR* replaceWith, ssize_t Start, ssize_t Count, ssize_t vbTextCompare){
+FBCALL FB_WCHAR* fb_WstrReplace(FB_WCHAR* src, FB_WCHAR* find, FB_WCHAR* replaceWith, ssize_t Start, ssize_t Count, ssize_t fbCompareType){
 	FB_WCHAR *dst=NULL;
-	ssize_t srcLen = 0, findLen = 0, replaceWithLen = 0;
+	FB_WCHAR* srcIndex = src;
+	FB_WCHAR * position = NULL;
+	FB_WCHAR* afterReplaceIndex = NULL;
+	FBCALL FB_WCHAR *(*myinstr)( FB_WCHAR *s, FB_WCHAR *sset );
+	ssize_t tmpLen = 0,srcLen = 0,findLen = 0, replaceWithLen = 0;
 	if (Start<1) Start=1;
 	if( src != NULL ) srcLen = fb_wstr_Len(src);
 	if( srcLen == 0 || srcLen < Start ){
 		return dst;
 	}
 	if( find != NULL ) findLen = fb_wstr_Len(find);
-	ssize_t srcount = fb_WstrSubStrCount(src, find,Start,vbTextCompare);
+	ssize_t srcount = fb_WstrSubStrCount(src, find,Start,fbCompareType);
 	if( findLen==0 || Count == 0 || srcount == 0 ){
-		if( srcLen !=0) dst = fb_wstr_AllocTemp( srcLen );
+		if( srcLen !=0) 	dst = fb_wstr_AllocTemp( srcLen );
 		if( dst != NULL )
 		{
 			fb_wstr_Copy( dst, src, srcLen );
 		}
 		return dst;
 	}
-
-
-	FB_WCHAR* srcIndex = src;
-	FB_WCHAR* afterReplaceIndex = NULL;
-	ssize_t i,j,k;
-	ssize_t cpStrStart ;
-	ssize_t cpState = 0;
-
-	if( replaceWith != NULL) replaceWithLen = fb_wstr_Len(replaceWith);
+	
+	if( replaceWith != NULL) replaceWithLen = fb_wstr_Len(replaceWith); 
 	if (Count>0 && Count<srcount) srcount=Count;
-	dst = fb_wstr_AllocTemp( srcLen + 1 + (replaceWithLen - findLen) * srcount );
+	dst = fb_wstr_AllocTemp( srcLen + (replaceWithLen - findLen) * srcount );
 	if( dst != NULL) {
+		afterReplaceIndex = dst;
 		Start--;
-		cpStrStart=Start;
-		afterReplaceIndex =dst;
-		if (Start)
-		{
-			fb_wstr_Copy(afterReplaceIndex, srcIndex,cpStrStart);
+		if (Start >0){
+			fb_wstr_Copy(afterReplaceIndex, srcIndex,Start);
+			afterReplaceIndex += Start;
+			srcIndex += Start;
 		}
-		srcIndex+=cpStrStart;
-		afterReplaceIndex += cpStrStart;
-		for(i = Start,j = 0,k = 0;i!=srcLen;i++){
-			if (!vbTextCompare)
-			{
-				cpState=(src[i] == find[j]);
-			}
-			else{
-				cpState=(FB_WCHAREQUAL(src[i],find[j])!=0);
-			}
-			if(cpState){
-				if(j == 0){
-					k = i;
+		position = srcIndex;
+		
+		if (fbCompareType & FB_vbTextCompare) myinstr= fb_Wstrstrcasestr;/* Text Compare */ else myinstr= fb_Wstrstrstr;
+		while ((srcount!=0) && (position = (*myinstr)(position, find)) != NULL){
+				tmpLen = fb_wstr_CalcDiff(srcIndex, position);
+				if(tmpLen>0){
+					fb_wstr_Copy(afterReplaceIndex, srcIndex,tmpLen);
+					afterReplaceIndex += tmpLen;
 				}
-				if(j == (findLen-1)){
-					j = 0;
-					cpStrStart=i - findLen - cpStrStart + 1;
-					fb_wstr_Copy(afterReplaceIndex, srcIndex,cpStrStart);
-					srcIndex += cpStrStart;
-					afterReplaceIndex += cpStrStart;
-					cpStrStart = i + 1;
-
-					if( replaceWithLen != 0){
-						fb_wstr_Copy(afterReplaceIndex, replaceWith, replaceWithLen);
-						afterReplaceIndex += replaceWithLen;
-					}
-					srcIndex += findLen;
-					if (--srcount==0) break;
-				}else{
-					j++;
+				if (replaceWithLen!=0){
+					fb_wstr_Copy(afterReplaceIndex, replaceWith,replaceWithLen);
+					afterReplaceIndex += replaceWithLen;
 				}
-			}else{
-				if(j != 0){
-					i = k;
-				}
-				j = 0;
-			}
+				srcount--;
+				position += findLen;
+				srcIndex = position;
 		}
-		fb_wstr_Copy(afterReplaceIndex, srcIndex, srcLen - cpStrStart);
+		tmpLen = fb_wstr_CalcDiff( srcIndex,src + srcLen);
+		if (tmpLen!=0) fb_wstr_Copy(afterReplaceIndex, srcIndex, tmpLen);
 	}
 	
 	return dst;

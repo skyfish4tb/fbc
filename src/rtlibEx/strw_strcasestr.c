@@ -5,7 +5,7 @@
 FBCALL FB_WCHAR * fb_Wstrstrcasestr ( FB_WCHAR *s1, FB_WCHAR *s2 )
 {
     FB_WCHAR * ptr = s1;
-    if (!s1 || !s2 || !*s2) return s1;
+    if (!s1 || !s2 || !*s2) return NULL;
     while (*ptr) {
 			if (FB_WCHAREQUAL(*ptr,*s2)!=0) {
 					FB_WCHAR * cur1 = ptr + 1;

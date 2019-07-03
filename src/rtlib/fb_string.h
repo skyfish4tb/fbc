@@ -10,6 +10,11 @@
 #else
 	#define FB_TEMPSTRBIT ((int)0x80000000)
 #endif
+#define FB_HasFirstAnyKey  ((int)0x10000000)
+#define FB_HasSecondAnyKey ((int)0x20000000)
+#define FB_HasKeepAnyKey   ((int)0x40000000)
+#define FB_vbTextCompare   ((int)0x80000000)
+#define FB_HasBothAnyKey   ((int)(FB_HasFirstAnyKey | FB_HasSecondAnyKey))
 
 /** Returns if the string is a temporary string.
  */
@@ -117,8 +122,14 @@ FBCALL char        *fb_hStrSkipCharI            ( char *s, ssize_t len, int c );
 FBCALL char        *fb_hStrSkipCharIRev         ( char *s, ssize_t len, int c );
 FBCALL char        *fb_strstr                   ( char *s1, char *s2 );
 FBCALL char        *fb_strcasestr               ( char *s1, char *s2 );
-FBCALL ssize_t      fb_SubStrCount              ( FBSTRING *src, FBSTRING *patt, ssize_t Start, ssize_t vbTextCompare );
-FBCALL ssize_t      fb_SubStrCountAny           ( FBSTRING *src, FBSTRING *patt, ssize_t Start, ssize_t vbTextCompare );
+FBCALL char        *fb_strmemchr                ( const char *pachText, char pachChar, size_t n );
+FBCALL char        *fb_strmemichr               ( const char *pachText, char pachChar, size_t n );
+FBCALL char        *fb_strstrany                ( char *pachChar, char *pachText );
+FBCALL char        *fb_strcasestrany            ( char *pachChar, char *pachText );
+FBCALL ssize_t      fb_SubStrCount              ( FBSTRING *src, FBSTRING *patt, ssize_t Start, ssize_t fbCompareType );
+FBCALL ssize_t      fb_SubStrCount2             ( FBSTRING *src, FBSTRING *patt1, FBSTRING *patt2, ssize_t Start, ssize_t fbCompareType, ssize_t *betweensize );
+FBCALL ssize_t      fb_SubStrCountAny           ( FBSTRING *src, FBSTRING *patt, ssize_t Start, ssize_t fbCompareType );
+FBCALL ssize_t      fb_SubStrCountAny2          ( FBSTRING *src, FBSTRING *patt1, FBSTRING *patt2, ssize_t Start, ssize_t fbCompareType, ssize_t *betweensize );
 
 
 /* public */
@@ -273,6 +284,8 @@ FBCALL ssize_t      fb_StrInstrRev      ( FBSTRING *src, FBSTRING *patt, ssize_t
 FBCALL ssize_t      fb_StrInstrRevAny   ( FBSTRING *src, FBSTRING *patt, ssize_t start );
 FBCALL FBSTRING    *fb_StrMid           ( FBSTRING *src, ssize_t start, ssize_t len );
 FBCALL void         fb_StrAssignMid     ( FBSTRING *dst, ssize_t start, ssize_t len, FBSTRING *src );
+FBCALL ssize_t      fb_StrIsUTF8        ( FBSTRING * srcstr, ssize_t len );
+FBCALL ssize_t      fb_IsUTF8File       ( FBSTRING * pFileName );
 
 /**************************************************************************************************
  * Unicode strings
@@ -290,9 +303,13 @@ FBCALL FB_WCHAR    *fb_WstrConcatWA     ( const FB_WCHAR *str1, const void *str2
 FBCALL FB_WCHAR    *fb_WstrConcatAW     ( const void *str1, ssize_t str1_size, const FB_WCHAR *str2 );
 FBCALL FB_WCHAR    *fb_WstrConcatAssign ( FB_WCHAR *dst, ssize_t dst_chars, const FB_WCHAR *src );
 FBCALL FB_WCHAR    *fb_Wstrstrstr       ( FB_WCHAR *s1, FB_WCHAR *s2 );
+FBCALL FB_WCHAR    *fb_Wstrstrstrany    ( FB_WCHAR *s1, FB_WCHAR *s2 );
 FBCALL FB_WCHAR    *fb_Wstrstrcasestr   ( FB_WCHAR *s1, FB_WCHAR *s2 );
-FBCALL ssize_t      fb_WstrSubStrCount  ( FB_WCHAR *src, FB_WCHAR *patt, ssize_t Start, ssize_t vbTextCompare );
-FBCALL ssize_t      fb_WstrSubStrCountAny ( FB_WCHAR *src, FB_WCHAR *patt, ssize_t Start, ssize_t vbTextCompare );
+FBCALL FB_WCHAR    *fb_Wstrstrcasestrany( FB_WCHAR *s1, FB_WCHAR *s2 );
+FBCALL ssize_t      fb_WstrSubStrCount  ( FB_WCHAR *src, FB_WCHAR *patt, ssize_t Start, ssize_t fbCompareType );
+FBCALL ssize_t      fb_WstrSubStrCount2  ( FB_WCHAR *src, FB_WCHAR *patt1, FB_WCHAR *patt2, ssize_t Start, ssize_t fbCompareType, ssize_t *betweensize );
+FBCALL ssize_t      fb_WstrSubStrCountAny ( FB_WCHAR *src, FB_WCHAR *patt, ssize_t Start, ssize_t fbCompareType );
+FBCALL ssize_t      fb_WstrSubStrCountAny2 ( FB_WCHAR *src, FB_WCHAR *patt2, FB_WCHAR *patt, ssize_t Start, ssize_t fbCompareType, ssize_t *betweensize );
 
 FBCALL ssize_t      fb_WstrLen          ( FB_WCHAR *str );
 FBCALL int          fb_WstrCompare      ( const FB_WCHAR *str1, const FB_WCHAR *str2 );

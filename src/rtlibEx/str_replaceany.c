@@ -2,18 +2,23 @@
 
 #include "../rtlib/fb.h"
 
-FBCALL FBSTRING* fb_ReplaceAny(FBSTRING* src, FBSTRING* find, FBSTRING* replaceWith, ssize_t Start, ssize_t Count, ssize_t vbTextCompare){
+FBCALL FBSTRING* fb_ReplaceAny(FBSTRING* src, FBSTRING* find, FBSTRING* replaceWith, ssize_t Start, ssize_t Count, ssize_t fbCompareType){
 	FBSTRING *dst=NULL;
-	ssize_t srcLen = FB_STRSIZE(src);
+	char* srcIndex = NULL;
+	char* position = NULL;
+	char* afterReplaceIndex = NULL;
+	ssize_t srcLen = 0 , findLen=0, replaceWithLen= 0, tmpLen = 0 ;
+	FBCALL char *(*myinstr)( char *s1, char *s2);
 	if (Start<1) Start=1;
+	if( src != NULL) srcLen = FB_STRSIZE(src);
 	FB_STRLOCK();
-	if( srcLen == 0 || srcLen < Start || find == NULL ){
+	if( srcLen == 0 ){
 		dst = &__fb_ctx.null_desc;
-	}
-	else{
-		ssize_t srcount = fb_SubStrCountAny(src, find,Start,vbTextCompare);
-		if( FB_STRSIZE(find)==0 || Count == 0 || srcount == 0 ){
-			if( srcLen !=0) 	dst = fb_hStrAllocTemp_NoLock( NULL, srcLen );
+	}else{
+		if( find != NULL) findLen = FB_STRSIZE(find);
+		ssize_t srcount = fb_SubStrCountAny(src, find,Start,fbCompareType);
+		if( findLen==0 || Count == 0 || srcount == 0 ){
+			if( srcLen !=0 ) 	dst = fb_hStrAllocTemp_NoLock( NULL, srcLen );
 			if( dst != NULL )
 			{
 				fb_hStrCopy( dst->data, src->data, srcLen );
@@ -21,18 +26,8 @@ FBCALL FBSTRING* fb_ReplaceAny(FBSTRING* src, FBSTRING* find, FBSTRING* replaceW
 			else{
 				dst = &__fb_ctx.null_desc;
 			}
-		}
-		else{
-			if( replaceWith == NULL){
-					replaceWith = &__fb_ctx.null_desc;
-			}
-			char* srcIndex = src->data;
-			char* afterReplaceIndex = NULL;
-			ssize_t i;
-			ssize_t findLen = FB_STRSIZE(find);
-			ssize_t replaceWithLen = FB_STRSIZE(replaceWith);
-			ssize_t cpStrStart ;
-			ssize_t cpState = 0;
+		}else{
+			if( replaceWith != NULL) replaceWithLen = FB_STRSIZE(replaceWith);
 
 			if (Count>0 && Count<srcount) srcount=Count;
 			dst = fb_hStrAllocTemp_NoLock( NULL, srcLen + (replaceWithLen - 1) * srcount );
@@ -41,46 +36,40 @@ FBCALL FBSTRING* fb_ReplaceAny(FBSTRING* src, FBSTRING* find, FBSTRING* replaceW
 				}
 			else{
 				Start--;
-				cpStrStart=Start;
-				afterReplaceIndex =dst->data;
+				srcIndex = src->data;
+				afterReplaceIndex = dst->data;
 				if (Start)
 				{
-					fb_hStrCopy(afterReplaceIndex, srcIndex,cpStrStart);
+					fb_hStrCopy(afterReplaceIndex, srcIndex,Start);
+					afterReplaceIndex += Start;
 				}
-				srcIndex+=cpStrStart;
-				afterReplaceIndex += cpStrStart;
-				for(i = Start;i!=srcLen;i++){
-					if (!vbTextCompare)
-					{
-						cpState=(FB_MEMCHR( find->data, *(((char* )src->data)+i), findLen )!=NULL);
+				srcIndex += Start;
+				position = srcIndex;
+				if (fbCompareType & FB_vbTextCompare) myinstr= fb_strcasestrany;/* Text Compare */ else myinstr= fb_strstrany;
+				while((srcount!=0) && (position = (*myinstr)(position, find->data)) != NULL){
+					tmpLen = (ssize_t)(position - srcIndex);
+					if(tmpLen>0){
+						fb_hStrCopy(afterReplaceIndex, srcIndex, tmpLen);
+						afterReplaceIndex += tmpLen;
 					}
-					else{
-						cpState=(FB_MEMICHR( find->data, *(((char* )src->data)+i), findLen )!=NULL);
+					if (replaceWithLen > 0){
+						fb_hStrCopy(afterReplaceIndex, replaceWith->data, replaceWithLen);
+						afterReplaceIndex += replaceWithLen;
 					}
-					if(cpState){
-							cpStrStart=i - cpStrStart;
-							fb_hStrCopy(afterReplaceIndex, srcIndex,cpStrStart);
-							srcIndex += cpStrStart;
-							afterReplaceIndex += cpStrStart;
-							cpStrStart = i + 1;
-
-							fb_hStrCopy(afterReplaceIndex, replaceWith->data, replaceWithLen);
-							afterReplaceIndex += replaceWithLen;
-							srcIndex ++;
-							if (--srcount==0) break;
-					}
+					srcount--;
+					srcIndex = ++position;
 				}
-				fb_hStrCopy(afterReplaceIndex, srcIndex, srcLen - cpStrStart);
+				fb_hStrCopy(afterReplaceIndex, srcIndex, (ssize_t)(src->data + srcLen - srcIndex));
 			}
 		}
 	}
-
+	
 	/* del if temp */
 	fb_hStrDelTemp_NoLock( src );
 	fb_hStrDelTemp_NoLock( find );
 	fb_hStrDelTemp_NoLock( replaceWith );
 
 	FB_STRUNLOCK();
-
+	
 	return dst;
 }
