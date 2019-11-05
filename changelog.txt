@@ -1,14 +1,39 @@
+Version 1.07.1
+
+[changed]
+- fbc '-version' reports build date in yyyy-mm-dd format (aka build date iso)
+
+[added]
+- extern "rtlib": respects the parent namespace, uses default fb calling convention and C style name mangling
+- __FB_BUILD_DATE_ISO__ intrinsic define to return fbc build date in 'yyyy-mm-dd' format
+- __FB_BUILD_SHA1__ intrinsic define to return the compiler's source code commit sha-1, (if known)
+- '-print sha-1' to print the compiler's source code commit sha-1, (if known)
+- makefile: 'FBSHA1=1' makefile configuration option to determine the current repo commit sha-1 from git
+- makefile: 'FBSHA1=some-sha-1' makefile configuration option to explicit set the repo commit sha-1
+- makefile: '-d FBSHA1="some-sha-1"' compiler option to set the value of '__FB_BUILD_SHA1__' when building fbc
+
+[fixed]
+- makefile: under MSYS2 (and friends), TARGET_ARCH is now identified from shell's default target architecture instead of shell's host architecture
+- sf.net #904; gcc backend: pass '-Wno-format' to prevent format string errors in gcc 9.x (enabled by default with -Wall)
+- sf.net #910: cast(string, variable) can cause fbc to segfault (infinite recursion), due to misplaced const & non-const casting
+
+
 Version 1.07.0
 
 [changed]
 - SADD/STRPTR(wstring) returns WSTRING PTR
+- '-v' be verbose command line option affects '-help' output
+- fbc aarch64 target by default maps to '-march=armv8-a' when passing options to gcc/LLVM (czsgaba)
 
 [added]
 - CVA_LIST type, CVA_START(), CVA_COPY() CVA_END(), CVA_ARG() macros will map to gcc's __builtin_va_list and __builtin_va_* macros in gcc backend
 - github #133: fbc makefile supports bootstrap-minimal target to build a bootstrap fbc with only the minimal features necessary to build another fbc. (William Breathitt Gray)
 - github #141: introduced '-strip'/'-nostrip' options to control symbol stripping of output files (William Breathitt Gray)
 - github #141: fbc will default to stripping symbols if '-d ENABLE_STRIPALL' is passed in FBCFLAGS (William Breathitt Gray)
-- github #141: makefile option 'ENABLE_STRIPALL=1' introduced to pass '-d ENABLE_STRIPALL' via FBCFLAGS by default for dos/win32 targets (William Breathitt Gray)
+- github #141: makefile option 'ENABLE_STRIPALL=1' introduced to pass '-d ENABLE_STRIPALL' via FBCFLAGS (William Breathitt Gray)
+- makefile: 'ENABLE_STRIPALL=1' passes '-d ENABLE_STRIPALL' via FBCFLAGS on all targets
+- makefile: 'ENABLE_STRIPALL=0' disables passing '-d ENABLE_STRIPALL' via FBCFLAGS on all targets
+- makefile: '-d ENABLE_STRIPALL' passed by default for dos/win32 targets when 'ENABLE_STRIPALL=0' not explicitly given
 - 'TYPE udt EXTENDS Z|WSTRING' allowed to specify that UDT is a kind of Z|WSTRING
 - LTRIM/RTRIM/TRIM will accept UDT as Z|WSTRING
 - LCASE/UCASE will accept UDT as Z|WSTRING
@@ -24,6 +49,13 @@ Version 1.07.0
 - SWAP statement will accept UDT as Z|WSTRING
 - IIF function will accept UDT as Z|WSTRING
 - PRINT/LPRINT/WRITE will accept UDT as Z|WSTRING
+- '-earray' command line option to enable array bounds checking
+- '-enullptr' command line option to enable null pointer checking 
+- '-eassert' command line option to enable assert() and assertwarn() checking
+- '-edebug' command line option to enable __FB_DEBUG__
+- '-edebuginfo' command line option to enable debug symbols
+- '-elocation' command line option to enable reporting error location
+- ./inc/fbc-int/array.bi - fbc internal API for array descriptor
 
 [fixed]
 - sf.net #881: C backend: support for varadic function parameters in gcc using __builtin_va_list type and related macros
@@ -39,6 +71,10 @@ Version 1.07.0
 - github #116: Fix optimizations in [L/R]TrimAny rtlib functions (SkyFish)
 - github #145: WSTRING concat and assign buffer (&=) overrun
 - sf.net #893: 'Suffixes are only valid in -lang' error message showing incorrect -lang options allowed
+- fbc uses '-march=armv8-a' instead of invalid option '-march=aarch64' when passing options to gcc/LLVM (czsgaba)
+- rtlib: sys/io.h incorrectly included on systems that do not provide it.  It is used only for x86, x86_64 and is unnecessary for all other linux targets (armhf ,arm64, mips ....)
+- SELECT CASE AS CONST checks for ranges that would produce unreasonably large jump tables (greater than 8192 entries)
+- sf.net #907: global overloaded operator procs need "_Z" mangling prefix
 
 
 Version 1.06.0

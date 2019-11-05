@@ -1,0 +1,38 @@
+[Project]
+Version=3
+Api=fb (FreeBASIC),win (Windows)
+Description=fbcunit
+Grouping=2
+AddMainFiles=1
+AddModuleFiles=1
+ResExport=
+CompileIfNewer=0
+IncVersion=0
+RunCmd=0
+FixExportFuncName=1
+[Make]
+Module=Module Build,fbc -mt -c
+Recompile=1
+IsCompile64=0
+BuildDebugInfo=0
+Current=1
+CurrentCompiler=4
+1=Library,fbc -lib -mt
+Output=libfbcunit.a
+Run=
+Delete=
+[File]
+Main=4
+1001=src\fbcunit.bas
+1002=src\fbcunit_console.bas
+1003=src\fbcunit_qb.bas
+1004=src\fbcunit_report.bas
+1=src\fbcunit_console.bi
+2=src\fbcunit_report.bi
+3=src\fbcunit_types.bi
+[BreakPoint]
+1001=
+[FileInfo]
+1001=0,24,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+[TabOrder]
+TabOrder=1001,0

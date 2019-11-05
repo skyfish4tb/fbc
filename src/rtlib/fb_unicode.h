@@ -127,15 +127,11 @@ static __inline__ int FB_WCHAREQUAL (FB_WCHAR pachText,FB_WCHAR pachChar)
 {
 	if (pachText == pachChar)
 	{
-			return -1;
+		return -1;
 	}
-	else if((pachChar >= 'A') && (pachChar <= 'Z'))
+	else if((pachText ^ pachChar)== 0x20) 
 	{
-			if (pachText - 32 == pachChar)	return  -1;
-	}
-	else if((pachChar >= 'a') && (pachChar <= 'z'))
-	{
-			if (pachText + 32 == pachChar)	return  -1;
+		if(((pachText >= 'A') && (pachText <= 'Z')) || ((pachText >= 'a') && (pachText <= 'z'))) return -1;
 	}
 	return 0;
 }
@@ -307,7 +303,7 @@ static __inline__ FB_WCHAR * wcsistr (const FB_WCHAR * str1,const FB_WCHAR * str
 	
 static __inline__ size_t wcsicspn (const FB_WCHAR * s,const FB_WCHAR * sset)
 {
-	if ( !*sset )return 0;
+	if ( !*sset )return -1;
 	FB_WCHAR *cp = (FB_WCHAR *) s;
 	FB_WCHAR *s2;
 	while (*cp)
@@ -320,7 +316,7 @@ static __inline__ size_t wcsicspn (const FB_WCHAR * s,const FB_WCHAR * sset)
 		}
 		cp++;
 	}
-	return 0;
+	return -1;
 }
 
 static __inline__ FB_WCHAR *wcsichr( const FB_WCHAR *ws, FB_WCHAR c )

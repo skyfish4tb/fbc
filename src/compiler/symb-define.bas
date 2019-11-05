@@ -107,11 +107,11 @@ private function hDefOutObj_cb ( ) as string
 end function
 
 private function hDefDebug_cb ( ) as string
-	function = str( env.clopt.assertions )
+	function = str( env.clopt.debug )
 end function
 
 private function hDefErr_cb ( ) as string
-    dim as integer res = &h0000
+	dim as integer res = &h0000
 
 	if( env.clopt.errorcheck ) then
 		res = &h0001
@@ -123,6 +123,30 @@ private function hDefErr_cb ( ) as string
 
 	if( env.clopt.extraerrchk ) then
 		res or= &h0004
+	end if
+
+	if( env.clopt.arrayboundchk ) then
+		res or= &h0008
+	end if
+
+	if( env.clopt.nullptrchk ) then
+		res or= &h0010
+	end if
+
+	if( env.clopt.assertions ) then
+		res or= &h0020
+	end if
+
+	if( env.clopt.debuginfo ) then
+		res or= &h0040
+	end if
+
+	if( env.clopt.debug ) then
+		res or= &h0080
+	end if
+
+	if( env.clopt.errlocation ) then
+		res or= &h0100
 	end if
 
 	function = str( res )
@@ -180,12 +204,14 @@ end function
 dim shared defTb(0 to ...) as SYMBDEF => _
 { _
 	_ '' name                     constant value  flags                callback (if value isn't constant)
-	(@"__FB_VERSION__"        , @FB_VERSION   , FB_DEFINE_FLAGS_STR, NULL               ), _
-	(@"__FB_BUILD_DATE__"     , @FB_BUILD_DATE, FB_DEFINE_FLAGS_STR, NULL               ), _
-	(@"__FB_VER_MAJOR__"      , @FB_VER_MAJOR , 0                  , NULL               ), _
-	(@"__FB_VER_MINOR__"      , @FB_VER_MINOR , 0                  , NULL               ), _
-	(@"__FB_VER_PATCH__"      , @FB_VER_PATCH , 0                  , NULL               ), _
-	(@"__FB_SIGNATURE__"      , @FB_SIGN      , FB_DEFINE_FLAGS_STR, NULL               ), _
+	(@"__FB_VERSION__"        , @FB_VERSION       , FB_DEFINE_FLAGS_STR, NULL           ), _
+	(@"__FB_BUILD_DATE__"     , @FB_BUILD_DATE    , FB_DEFINE_FLAGS_STR, NULL           ), _
+	(@"__FB_BUILD_DATE_ISO__" , @FB_BUILD_DATE_ISO, FB_DEFINE_FLAGS_STR, NULL           ), _
+	(@"__FB_VER_MAJOR__"      , @FB_VER_MAJOR     , 0                  , NULL           ), _
+	(@"__FB_VER_MINOR__"      , @FB_VER_MINOR     , 0                  , NULL           ), _
+	(@"__FB_VER_PATCH__"      , @FB_VER_PATCH     , 0                  , NULL           ), _
+	(@"__FB_SIGNATURE__"      , @FB_SIGN          , FB_DEFINE_FLAGS_STR, NULL           ), _
+	(@"__FB_BUILD_SHA1__"     , @FB_BUILD_SHA1    , FB_DEFINE_FLAGS_STR, NULL           ), _
 	(@"__FB_MT__"             , NULL          , 0                  , @hDefMultithread_cb), _
 	(@"__FILE__"              , NULL          , FB_DEFINE_FLAGS_STR, @hDefFile_cb       ), _
 	(@"__FILE_NQ__"           , NULL          , 0                  , @hDefFile_cb       ), _
@@ -214,8 +240,13 @@ dim shared defTb(0 to ...) as SYMBDEF => _
 	(@"__FB_FPMODE__"         , NULL          , FB_DEFINE_FLAGS_STR, @hDefFpmode_cb     ), _
 	(@"__FB_GCC__"            , NULL          , 0                  , @hDefGcc_cb        ), _
 	(@"__FB_GUI__"            , NULL          , 0                  , @hDefGui_cb        ), _
-	(@"__FB_VERSION4XWY__"    , @FB_VERSION4XWY , FB_DEFINE_FLAGS_STR, NULL             )  _
-}
+	(@"__FB_VERSION4XWY__"    , @FB_VERSION4XWY , FB_DEFINE_FLAGS_STR, NULL             ), _
+	(@"__FB_HASFIRSTANYKEY__"   , @vFB_HASFIRSTANYKEY   , 0        , NULL               ), _
+	(@"__FB_HASSECONDANYKEY__"  , @vFB_HASSECONDANYKEY  , 0        , NULL               ), _
+	(@"__FB_HASKEEPANYKEY__"    , @vFB_HASKEEPANYKEY    , 0        , NULL               ), _
+	(@"__FB_VBTEXTCOMPARE__"    , @vFB_VBTEXTCOMPARE    , 0        , NULL               ), _
+	(@"__FB_HASBOTHANYKEY__"    , @vFB_HASBOTHANYKEY    , 0        , NULL               )  _
+} 
 
 sub symbDefineInit _
 	( _

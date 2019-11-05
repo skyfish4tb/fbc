@@ -25,7 +25,7 @@ FBCALL ssize_t fb_StrInstrIAny( ssize_t start, FBSTRING *src, FBSTRING *patt )
 			const char *pachText = src->data  - 1;
 			const char *pachPattern = patt->data;
 			r = 0;
-			for( ; start != size_src; ++start )
+			for( ; start <= size_src; ++start )
 			{
 				for( i = 0; i != size_patt; ++i )
 					if( FB_CHAREQUAL(pachText[start] , pachPattern[i])!=0 )

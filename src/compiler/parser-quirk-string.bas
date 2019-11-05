@@ -673,15 +673,26 @@ function astBuiltCompareType _
 end function
 
 function CheckIsNumberType ( byval nd_comparetype as ASTNODE ptr  ) as integer
-   select case astGetDataType( nd_comparetype )
-      case 	FB_DATATYPE_BOOLEAN,FB_DATATYPE_BYTE,FB_DATATYPE_UBYTE,FB_DATATYPE_SHORT,_
-            FB_DATATYPE_USHORT,FB_DATATYPE_INTEGER,FB_DATATYPE_UINT,FB_DATATYPE_ENUM,_
-            FB_DATATYPE_LONG,FB_DATATYPE_ULONG,FB_DATATYPE_LONGINT,FB_DATATYPE_ULONGINT, _
-            FB_DATATYPE_SINGLE,FB_DATATYPE_DOUBLE
-            return -1
-      case else
-            return 0
-   end select    
+	if nd_comparetype then
+		select case astGetDataType( nd_comparetype )
+		case 	FB_DATATYPE_BOOLEAN,FB_DATATYPE_BYTE,FB_DATATYPE_UBYTE,FB_DATATYPE_SHORT,_
+			FB_DATATYPE_USHORT,FB_DATATYPE_INTEGER,FB_DATATYPE_UINT,FB_DATATYPE_ENUM,_
+			FB_DATATYPE_LONG,FB_DATATYPE_ULONG,FB_DATATYPE_LONGINT,FB_DATATYPE_ULONGINT, _
+			FB_DATATYPE_SINGLE,FB_DATATYPE_DOUBLE
+			return -1
+		end select
+	EndIf
+	return 0
+end function
+
+function CheckIsStringType ( byval nd_comparetype as ASTNODE ptr  ) as integer
+	if nd_comparetype then
+		select case astGetDataType( nd_comparetype )
+			case FB_DATATYPE_CHAR,FB_DATATYPE_STRING, FB_DATATYPE_FIXSTR, FB_DATATYPE_WCHAR
+			return -1
+		end select
+	EndIf
+	return 0
 end function
 '':::::
 '' cStringFunct	=	W|STR$ '(' Expression{bool|int|float|double} ')'
@@ -698,7 +709,7 @@ end function
 ''
 function cStringFunct(byval tk as FB_TOKEN) as ASTNODE ptr
 	dim as ASTNODE ptr expr1 = NULL, expr2 = NULL, expr3 = NULL, expr4 = NULL, expr5 = NULL, expr6 = NULL, expr7 = NULL
-	dim as integer dclass = any, dtype = any, is_any = any, is_wstr = any
+	dim as integer dclass = any, dtype = any, is_any = any, is_wstr = any, is_state = any
 
 	function = NULL
 
@@ -783,7 +794,79 @@ function cStringFunct(byval tk as FB_TOKEN) as ASTNODE ptr
 
 		function = cStrASC()
 
-	case FB_TK_INSTR,FB_TK_INSTRI
+		'' INSTR '(' (Expression{int} ',')? Expression{str}, "ANY"? Expression{str}, (',' Expression{int})? ')'
+		'' INSTR '(' (Expression{int} ',')? Expression{str}, "ANY"? Expression{str}, "ANY"? Expression{str}, (',' Expression{int})? ')'(',' Expression{int})? ')'
+	case FB_TK_INSTR
+		lexSkipToken( )
+
+		hMatchLPRNT( )
+		hMatchExpressionEx( expr1, FB_DATATYPE_INTEGER )
+		if CheckIsNumberType( expr1 ) then
+			hMatchCOMMA( )
+			hMatchExpressionEx( expr2, FB_DATATYPE_STRING )
+		else
+			expr2 = expr1
+			expr1 = astNewCONSTi( 1 )
+		EndIf
+		hMatchCOMMA( )
+		is_any = iif(hMatch( FB_TK_ANY ),FB_HasFirstAnyKey,0)
+		hMatchExpressionEx( expr3, FB_DATATYPE_STRING )
+		is_state = 1
+		if(not hMatch( CHAR_COMMA )) then
+			hMatchRPRNT( )
+			expr1 = rtlStrInstr( expr1, expr2, expr3, FALSE, is_any )
+		else
+			is_any or= iif(hMatch( FB_TK_ANY ),FB_HasSecondAnyKey,0)
+			hMatchExpressionExNoExit( expr4, FB_DATATYPE_STRING )
+			if( expr4 = NULL ) then
+				is_any and= (Not FB_HasSecondAnyKey)
+			EndIf
+			if( hMatch( CHAR_COMMA )) then
+				if CheckIsNumberType( expr4 ) then
+					expr5 = expr4
+					expr4 = NULL
+				else
+					hMatchExpressionExNoExit( expr5, FB_DATATYPE_INTEGER )
+					if( hMatch( CHAR_COMMA )) then
+						hMatchExpressionExNoExit( expr6, FB_DATATYPE_INTEGER )
+					end if
+				endIf
+				hMatchRPRNT( )
+			else
+				hMatchRPRNT( )
+				if( expr4 = NULL ) then
+					is_state = 0
+					expr1 = rtlStrInstr( expr1, expr2, expr3, FALSE, is_any )
+				elseif(astIsCONST( expr4 ) ) then
+					is_state = 0
+					dim as longint p= astConstFlushToInt( expr4 )
+					expr1 = rtlStrInstr( expr1, expr2, expr3, (p and (Not FB_HasKeepAnyKey)), is_any )
+				elseif CheckIsNumberType( expr4 ) then
+					expr5 = expr4
+					expr4 = NULL
+				end if
+			end if
+			if is_state then
+				if( expr5 = NULL ) then
+					expr5 = astNewCONSTi( is_any )
+				elseif CheckIsNumberType( expr5 ) then
+					expr5 = astBuiltCompareType( expr5 , is_any )
+				endIf
+				if( expr4<>NULL andalso expr6 = NULL ) then
+					expr6 = astNewCONSTi( 0 )
+				EndIf
+				expr1 = rtlStrInstrEx( expr1, expr2, expr3, expr4, expr5, expr6, is_any )
+			endif
+		end if
+
+		if( expr1 = NULL ) then
+			errReport( FB_ERRMSG_INVALIDDATATYPES )
+			expr1 = astNewCONSTi( 0 )
+		end if
+
+		function = expr1
+
+	case FB_TK_INSTRI
 		lexSkipToken( )
 
 		hMatchLPRNT( )
@@ -804,11 +887,7 @@ function cStringFunct(byval tk as FB_TOKEN) as ASTNODE ptr
 			expr1 = astNewCONSTi( 1 )
 		end if
 		hMatchRPRNT( )
-		if (tk = FB_TK_INSTR) then
-			expr1 = rtlStrInstr( expr1, expr2, expr3, is_any )
-		else
-			expr1 = rtlStrInstrI( expr1, expr2, expr3, is_any )
-		endif
+		expr1 = rtlStrInstr( expr1, expr2, expr3, TRUE, is_any )
 		if( expr1 = NULL ) then
 			errReport( FB_ERRMSG_INVALIDDATATYPES )
 			expr1 = astNewCONSTi( 0 )
@@ -1011,6 +1090,45 @@ function cStringFunct(byval tk as FB_TOKEN) as ASTNODE ptr
 		end if
 
 		function = expr1
+
+	'' StrComp  '(' Expression{str}, Expression{str} _
+	''           (',' Expression{int})? (',' Expression{int})? (',' Expression{int})? ')'
+	case FB_TK_STRCOMP
+		lexSkipToken( )
+
+		hMatchLPRNT( )
+		hMatchExpressionEx( expr1, FB_DATATYPE_STRING )
+		hMatchCOMMA( )
+		is_any = hMatch( FB_TK_ANY )
+		hMatchExpressionEx( expr2, FB_DATATYPE_STRING )
+      if( hMatch( CHAR_COMMA )) then
+         hMatchExpressionExNoExit( expr3, FB_DATATYPE_INTEGER )
+         if( hMatch( CHAR_COMMA )) then
+            hMatchExpressionExNoExit( expr4, FB_DATATYPE_INTEGER )
+            if( hMatch( CHAR_COMMA )) then
+              hMatchExpressionExNoExit( expr5, FB_DATATYPE_INTEGER )
+            end if
+         end if
+      end if
+		hMatchRPRNT( )
+
+		if( expr3 = NULL ) then expr3 = astNewCONSTi( 0 )
+		if( expr4 = NULL ) then expr4 = astNewCONSTi( 1 )
+		if( expr5 = NULL ) then 
+   		if is_any then
+   		   expr5 = astNewCONSTi( -1 )
+   		else
+   		   expr5 = astNewCONSTi( 1 )
+   		EndIf
+		EndIf
+		
+      expr1 = rtlStrComp( expr1, expr2, expr3, expr4, expr5, is_any)
+      if( expr1 = NULL ) then
+         errReport( FB_ERRMSG_INVALIDDATATYPES )
+         expr1 = astNewCONSTi( 0 )
+      end if
+
+      function = expr1
 
 	'' LCASE|UCASE '(' Expression{string} [, Expression{integer}] ')'
 	case FB_TK_LCASE, FB_TK_UCASE

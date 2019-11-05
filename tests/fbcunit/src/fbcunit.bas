@@ -1,5 +1,5 @@
 ''  fbcunit - FreeBASIC Compiler Unit Testing Component
-''	Copyright (C) 2017-2018 Jeffery R. Marshall (coder[at]execulink[dot]com)
+''	Copyright (C) 2017-2019 Jeffery R. Marshall (coder[at]execulink[dot]com)
 ''
 ''  License: GNU Lesser General Public License 
 ''           version 2.1 (or any later version) plus
@@ -607,6 +607,10 @@ namespace fbcu
 
 							fbcu_test_index = .test_index_next
 
+							if( .assert_pass_count <> .assert_count ) then
+								failed = true
+							end if
+
 						end with
 
 					wend
@@ -700,6 +704,18 @@ namespace fbcu
 
 	end sub
 
+	#if( __FB_VERSION__ < "1.04" )
+		#ifndef cbool
+			function cbool _
+			( _
+			byval a as integer _
+			) as boolean
+				if a then return true else return false
+
+			end function
+		#endif
+	#endif
+	
 	''
 	function sngIsNan _
 		( _

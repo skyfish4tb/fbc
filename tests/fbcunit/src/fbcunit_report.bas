@@ -5,6 +5,7 @@
 ''           version 2.1 (or any later version) plus
 ''           linking exception, see license.txt
 
+#include once "fbcunit.bi"
 #include once "crt/stdio.bi"
 #include once "fbcunit_report.bi"
 

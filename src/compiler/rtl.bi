@@ -68,8 +68,12 @@
 #define FB_RTL_STRCHR 					"fb_CHR"
 #define FB_RTL_STRINSTR 				"fb_StrInstr"
 #define FB_RTL_STRINSTRI 				"fb_StrInstrI"
+#define FB_RTL_STRINSTREX 				"fb_StrInstrEx"
+#define FB_RTL_STRINSTR2 				"fb_StrInstr2"
 #define FB_RTL_STRINSTRANY				"fb_StrInstrAny"
 #define FB_RTL_STRINSTRIANY				"fb_StrInstrIAny"
+#define FB_RTL_STRINSTREXANY			"fb_StrInstrExAny"
+#define FB_RTL_STRINSTR2ANY				"fb_StrInstr2Any"
 #define FB_RTL_STRINSTRREV 				"fb_StrInstrRev"
 #define FB_RTL_STRINSTRREVI 			"fb_StrInstrRevI"
 #define FB_RTL_STRINSTRREVANY			"fb_StrInstrRevAny"
@@ -97,6 +101,8 @@
 #define FB_RTL_STRSUBSTRCOUNT2 			"fb_SubStrCount2"
 #define FB_RTL_STRSUBSTRCOUNTANY		"fb_SubStrCountAny"
 #define FB_RTL_STRSUBSTRCOUNTANY2		"fb_SubStrCountAny2"
+#define FB_RTL_STRSTRCOMP 				"fb_StrComp"
+#define FB_RTL_STRSTRCOMPANY 			"fb_StrCompAny"
 #define FB_RTL_STRLCASE2				"fb_StrLcase2"
 #define FB_RTL_STRUCASE2				"fb_StrUcase2"
 #define FB_RTL_STRSWAP 					"fb_StrSwap"
@@ -133,8 +139,12 @@
 #define FB_RTL_WSTRCHR 					"fb_WstrChr"
 #define FB_RTL_WSTRINSTR 				"fb_WstrInstr"
 #define FB_RTL_WSTRINSTRI 				"fb_WstrInstrI"
+#define FB_RTL_WSTRINSTREX 				"fb_WstrInstrEx"
+#define FB_RTL_WSTRINSTR2 				"fb_WstrInstr2"
 #define FB_RTL_WSTRINSTRANY				"fb_WstrInstrAny"
 #define FB_RTL_WSTRINSTRIANY			"fb_WstrInstrIAny"
+#define FB_RTL_WSTRINSTREXANY			"fb_WstrInstrExAny"
+#define FB_RTL_WSTRINSTR2ANY			"fb_WstrInstr2Any"
 #define FB_RTL_WSTRINSTRREV 			"fb_WstrInstrRev"
 #define FB_RTL_WSTRINSTRREVI 			"fb_WstrInstrRevI"
 #define FB_RTL_WSTRINSTRREVANY			"fb_WstrInstrRevAny"
@@ -162,6 +172,8 @@
 #define FB_RTL_WSTRSUBSTRCOUNT2 		"fb_WstrSubStrCount2"
 #define FB_RTL_WSTRSUBSTRCOUNTANY		"fb_WstrSubStrCountAny"
 #define FB_RTL_WSTRSUBSTRCOUNTANY2		"fb_WstrSubStrCountAny2"
+#define FB_RTL_WSTRSTRCOMP 				"fb_Wstrstrcomp"
+#define FB_RTL_WSTRSTRCOMPANY 			"fb_WstrstrcompAny"
 #define FB_RTL_WSTRLCASE2				"fb_WstrLcase2"
 #define FB_RTL_WSTRUCASE2				"fb_WstrUcase2"
 #define FB_RTL_WSTRSWAP 				"fb_WstrSwap"
@@ -513,8 +525,12 @@ enum FB_RTL_IDX
 	FB_RTL_IDX_STRCHR
 	FB_RTL_IDX_STRINSTR
 	FB_RTL_IDX_STRINSTRI
+	FB_RTL_IDX_STRINSTREX
+	FB_RTL_IDX_STRINSTR2
 	FB_RTL_IDX_STRINSTRANY
 	FB_RTL_IDX_STRINSTRIANY
+	FB_RTL_IDX_STRINSTREXANY
+	FB_RTL_IDX_STRINSTR2ANY
 	FB_RTL_IDX_STRINSTRREV
 	FB_RTL_IDX_STRINSTRREVI
 	FB_RTL_IDX_STRINSTRREVANY
@@ -542,6 +558,8 @@ enum FB_RTL_IDX
 	FB_RTL_IDX_STRSUBSTRCOUNT2
 	FB_RTL_IDX_STRSUBSTRCOUNTANY
 	FB_RTL_IDX_STRSUBSTRCOUNTANY2
+	FB_RTL_IDX_STRSTRCOMP
+	FB_RTL_IDX_STRSTRCOMPANY
 	FB_RTL_IDX_STRLCASE2
 	FB_RTL_IDX_STRUCASE2
 	FB_RTL_IDX_STRSWAP
@@ -578,8 +596,12 @@ enum FB_RTL_IDX
 	FB_RTL_IDX_WSTRCHR
 	FB_RTL_IDX_WSTRINSTR
 	FB_RTL_IDX_WSTRINSTRI
+	FB_RTL_IDX_WSTRINSTREX
+	FB_RTL_IDX_WSTRINSTR2
 	FB_RTL_IDX_WSTRINSTRANY
 	FB_RTL_IDX_WSTRINSTRIANY
+	FB_RTL_IDX_WSTRINSTREXANY
+	FB_RTL_IDX_WSTRINSTR2ANY
 	FB_RTL_IDX_WSTRINSTRREV
 	FB_RTL_IDX_WSTRINSTRREVI
 	FB_RTL_IDX_WSTRINSTRREVANY
@@ -607,6 +629,8 @@ enum FB_RTL_IDX
 	FB_RTL_IDX_WSTRSUBSTRCOUNT2
 	FB_RTL_IDX_WSTRSUBSTRCOUNTANY
 	FB_RTL_IDX_WSTRSUBSTRCOUNTANY2
+	FB_RTL_IDX_WSTRSTRCOMP
+	FB_RTL_IDX_WSTRSTRCOMPANY
 	FB_RTL_IDX_WSTRLCASE2
 	FB_RTL_IDX_WSTRUCASE2
 	FB_RTL_IDX_WSTRSWAP
@@ -895,21 +919,21 @@ enum FB_RTL_IDX
 end enum
 
 enum FB_RTL_OPT
-	FB_RTL_OPT_NONE		  = &h00000000
-	FB_RTL_OPT_OVER		  = &h00000001					'' overloaded
-	FB_RTL_OPT_ERROR	  = &h00000002					'' returns an error
-	FB_RTL_OPT_MT		  = &h00000004					'' needs the multithreaded rtlib
+	FB_RTL_OPT_NONE           = &h00000000
+	FB_RTL_OPT_OVER           = &h00000001  '' overloaded
+	FB_RTL_OPT_ERROR          = &h00000002  '' returns an error
+	FB_RTL_OPT_MT             = &h00000004  '' needs the multithreaded rtlib
 
-	FB_RTL_OPT_DBGONLY	  = &h00000010                  '' Debug-build only (assertions/__FB_DEBUG__)
-				''= &h00000020
-	FB_RTL_OPT_STRSUFFIX  = &h00000040                  '' has a $ suffix (-lang qb only)
-	FB_RTL_OPT_NOQB		  = &h00000080                  '' anything but -lang qb
-	FB_RTL_OPT_QBONLY	  = &h00000100                  '' -lang qb only
-	FB_RTL_OPT_NOFB		  = &h00000200                  '' anything but -lang fb
-	FB_RTL_OPT_FBONLY	  = &h00000400                  ''
+	FB_RTL_OPT_ASSERTONLY     = &h00000010  '' only if asserts are enabled
+	''                        = &h00000020
+	FB_RTL_OPT_STRSUFFIX      = &h00000040  '' has a $ suffix (-lang qb only)
+	FB_RTL_OPT_NOQB           = &h00000080  '' anything but -lang qb
+	FB_RTL_OPT_QBONLY         = &h00000100  '' -lang qb only
+	FB_RTL_OPT_NOFB           = &h00000200  '' anything but -lang fb
+	FB_RTL_OPT_FBONLY         = &h00000400  ''
 	FB_RTL_OPT_CANBECLONED    = &h00000800  '' -> FB_PROCSTATS_CANBECLONED
-	                          ''&h00001000
-	FB_RTL_OPT_NOGCC	  = &h00002000                  '' anything but -gen gcc
+	''                        = &h00001000
+	FB_RTL_OPT_NOGCC          = &h00002000  '' anything but -gen gcc
 	FB_RTL_OPT_X86ONLY        = &h00004000  '' on x86 only
 	FB_RTL_OPT_32BIT          = &h00008000  '' 32bit only
 	FB_RTL_OPT_64BIT          = &h00010000  '' 64bit only
@@ -932,12 +956,6 @@ enum
 	FB_THREADCALL_STRUCT
 	FB_THREADCALL_PTR
 end enum
-
-#define FB_HasFirstAnyKey  &H10000000
-#define FB_HasSecondAnyKey &H20000000
-#define FB_HasKeepAnyKey   &H40000000
-#define FB_vbTextCompare   &H80000000
-#define FB_HasBothAnyKey   (FB_HasFirstAnyKey or FB_HasSecondAnyKey)
 
 type FB_RTL_PARAMDEF
 	dtype		as FB_DATATYPE
@@ -1134,16 +1152,20 @@ declare function rtlStrInstr _
 		byval nd_start as ASTNODE ptr, _
 		byval nd_text as ASTNODE ptr, _
 		byval nd_pattern as ASTNODE ptr, _
+		byval IsfbCompareType as integer, _
 		byval search_any as integer _
 	) as ASTNODE ptr
 
-declare function rtlStrInstrI _
+declare function rtlStrInstrEx _
 	( _
 		byval nd_start as ASTNODE ptr, _
-		byval nd_text as ASTNODE ptr, _
-		byval nd_pattern as ASTNODE ptr, _
+		byval nd_src as ASTNODE ptr, _
+		byval nd_find1 as ASTNODE ptr, _
+		byval nd_find2 as ASTNODE ptr, _
+		byval nd_fbCompareType as ASTNODE ptr, _
+		byval nd_betweensize as ASTNODE ptr, _
 		byval search_any as integer _
-	) as ASTNODE ptr
+    ) as ASTNODE ptr
 
 declare function rtlStrInstrRev _
 	( _
@@ -1225,6 +1247,16 @@ declare function rtlStrSubStrCount _
 		byval nd_start as ASTNODE ptr, _
 		byval nd_fbCompareType as ASTNODE ptr, _
 		byval nd_betweensize as ASTNODE ptr, _
+		byval search_any as integer _
+	) as ASTNODE ptr
+
+declare function rtlStrComp _
+	( _
+		byval nd_src as ASTNODE ptr, _
+		byval nd_find as ASTNODE ptr, _
+		byval nd_fbCompareType as ASTNODE ptr, _
+		byval nd_start as ASTNODE ptr, _
+		byval nd_MaxCount as ASTNODE ptr, _
 		byval search_any as integer _
 	) as ASTNODE ptr
 

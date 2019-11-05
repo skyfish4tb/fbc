@@ -142,15 +142,11 @@
 	{
 		if (pachText == pachChar)
 		{
-				return -1;
+			return -1;
 		}
-		else if((pachChar >= 'A') && (pachChar <= 'Z'))
+		else if((pachText ^ pachChar)== 0x20) 
 		{
-				if (pachText - 32 == pachChar)	return  -1;
-		}
-		else if((pachChar >= 'a') && (pachChar <= 'z'))
-		{
-				if (pachText + 32 == pachChar)	return  -1;
+			if(((pachText >= 'A') && (pachText <= 'Z')) || ((pachText >= 'a') && (pachText <= 'z'))) return -1;
 		}
 		return 0;
 	}

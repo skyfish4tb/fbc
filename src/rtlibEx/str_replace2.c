@@ -69,7 +69,7 @@ FBCALL FBSTRING* fb_Replace2(FBSTRING* src, FBSTRING* find1, FBSTRING* find2, FB
 							fb_hStrCopy(afterReplaceIndex, replaceWith->data,replaceWithLen);
 							afterReplaceIndex += replaceWithLen;
 						}
-						srcIndex = position + tmpLen;
+						srcIndex = position + size_find1;
 						
 						if(size_find2 != 0) {/* find2 */
 							if ((position = (*myInstr)(srcIndex, find2->data)) == NULL){

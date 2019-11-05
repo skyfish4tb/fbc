@@ -60,7 +60,7 @@ FBCALL FB_WCHAR* fb_WstrReplace2(FB_WCHAR* src, FB_WCHAR* find1, FB_WCHAR* find2
 							fb_wstr_Copy(afterReplaceIndex, replaceWith,replaceWithLen);
 							afterReplaceIndex += replaceWithLen;
 						}
-						srcIndex = position + tmpLen;
+						srcIndex = position + size_find1;
 						
 						if(size_find2 != 0) {/* find2 */
 							if ((position = (*myInstrptr)(srcIndex, find2)) == NULL){

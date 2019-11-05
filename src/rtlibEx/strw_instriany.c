@@ -12,10 +12,13 @@ FBCALL ssize_t fb_WstrInstrIAny( ssize_t start, const FB_WCHAR *src, const FB_WC
 
 		if( (start > 0) && (start <= size_src) )
 		{
-			r = fb_wstr_InstrIAny( &src[start-1], patt ) + start;
+			r = fb_wstr_InstrIAny( &src[start-1], patt ) ;
 
-			if( r > size_src )
+			if( r <0 ){
 				r = 0;
+			}else{
+				r += start;
+			}
 		}
 	}
 

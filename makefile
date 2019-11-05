@@ -77,12 +77,14 @@
 #   FBC, CC, AR      fbc, gcc, ar programs (TARGET may be prefixed to CC/AR)
 #   V=1              to see full command lines
 #   ENABLE_STANDALONE=1    build source tree into self-contained FB installation
-#   ENABLE_SINGLELIBRARY4FB=1   Generates a single rtlib file. 
 #   ENABLE_PREFIX=1        use "-d ENABLE_PREFIX=$(prefix)" to hard-code the prefix into fbc
 #   ENABLE_SUFFIX=-0.24    append a string like "-0.24" to fbc/FB dir names,
 #                          and use "-d ENABLE_SUFFIX=$(ENABLE_SUFFIX)" (non-standalone only)
 #   ENABLE_LIB64=1         use prefix/lib64/ instead of prefix/lib/ for 64bit libs (non-standalone only)
-#   ENABLE_STRIPALL=1      use "-d ENABLE_STRIPALL" with select targets
+#   ENABLE_STRIPALL=1      use "-d ENABLE_STRIPALL" with all targets
+#   ENABLE_STRIPALL=0      disable "-d ENABLE_STRIPALL" with all targets
+#   FBSHA1=1               determine the sha-1 of the current commit in repo and store it in the compiler
+#   FBSHA1=some-sha-1      explicitly indicate the sha-1 to store in the compiler
 #   FBPACKAGE     bindist: The package/archive file name without path or extension
 #   FBPACKSUFFIX  bindist: Allows adding a custom suffix to the normal package name (and the toplevel dir in the archive)
 #   FBMANIFEST    bindist: The manifest file name without path or extension
@@ -91,11 +93,11 @@
 #
 # compiler source code configuration (FBCFLAGS):
 #   -d ENABLE_STANDALONE     build for a self-contained installation
-#   -d ENABLE_SINGLELIBRARY4FB Generates a single rtlib file.
 #   -d ENABLE_SUFFIX=-0.24   assume FB's lib dir uses the given suffix (non-standalone only)
 #   -d ENABLE_PREFIX=/some/path   hard-code specific $(prefix) into fbc
 #   -d ENABLE_LIB64          use prefix/lib64/ instead of prefix/lib/ for 64bit libs (non-standalone only)
 #   -d ENABLE_STRIPALL       configure fbc to pass down '--strip-all' to linker by default
+#   -d FBSHA1=some-sha-1     store 'some-sha-1' in the compiler for version information
 #
 # rtlib/gfxlib2 source code configuration (CFLAGS):
 #   -DDISABLE_X11    build without X11 headers (disables X11 gfx driver)
@@ -120,11 +122,8 @@
 #        $ make
 #    2) Add rtlib/gfxlib2 for some additional target
 #        $ make rtlib gfxlib2 TARGET=i686-w64-mingw32
-#        $ make rtlib gfxlib2 TARGET=x86_64-w64-mingw32
 #
 
-# ENABLE_SINGLELIBRARY4FB = 1
-# MULTILIB=64
 FBC := fbc
 CFLAGS := -Wfatal-errors -O2
 # Avoid gcc exception handling bloat
@@ -132,7 +131,7 @@ CFLAGS += -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables
 FBFLAGS := -maxerr 1
 AS = $(TARGET_PREFIX)as
 AR = $(TARGET_PREFIX)ar
-CC = $(TARGET_PREFIX)gcc$(TARGET_CALLGCC32)
+CC = $(TARGET_PREFIX)gcc
 prefix := /usr/local
 
 # Determine the makefile's directory, this may be a relative path when
@@ -210,7 +209,7 @@ else
       TARGET_OS := linux
     else ifneq ($(findstring MINGW,$(uname)),)
       TARGET_OS := win32
-	else ifneq ($(findstring MSYS_NT,$(uname)),)
+    else ifneq ($(findstring MSYS_NT,$(uname)),)
       TARGET_OS := win32
     else ifeq ($(uname),MS-DOS)
       TARGET_OS := dos
@@ -227,6 +226,25 @@ else
     # For DJGPP, always use x86 (DJGPP's uname -m returns just "pc")
     ifeq ($(TARGET_OS),dos)
       TARGET_ARCH := x86
+
+    # For MSYS2, use default compilers (uname -m returns MSYS2's shell
+    #  architecture).  For example, from win 7:
+    #
+    # host    shell    uname -s -m              default gcc target
+    # ------  -------  --------------------     ------------------
+    # msys32  msys2    MSYS_NT-6.1-WOW i686     n/a
+    # msys32  mingw32  MINGW32_NT-6.1-WOW i686  i686-w64-mingw32
+    # msys32  mingw64  MINGW64_NT-6.1-WOW i686  x86_64-w64-mingw32
+    # msys64  msys2    MSYS_NT-6.1 x86_64       n/a
+    # msys64  mingw32  MINGW32_NT-6.1 x86_64    i686-w64-mingw32
+    # msys64  mingw64  MINGW64_NT-6.1 x86_64    x86_64-w64-mingw32
+    #
+    else ifneq ($(findstring MINGW32,$(uname)),)
+      TARGET_ARCH := x86
+    else ifneq ($(findstring MINGW64,$(uname)),)
+      TARGET_ARCH := x86_64
+
+    # anything, trust 'uname -m', we have no other choice
     else
       TARGET_ARCH = $(shell uname -m)
     endif
@@ -427,6 +445,13 @@ endif
 ifdef ENABLE_STANDALONE
   ALLFBCFLAGS += -d ENABLE_STANDALONE
 endif
+ifdef FBSHA1
+  ifeq ($(FBSHA1),1)
+    ALLFBCFLAGS += -d 'FBSHA1="$(shell git rev-parse HEAD)"'
+  else
+    ALLFBCFLAGS += -d 'FBSHA1="$(FBSHA1)"'
+  endif
+endif
 ifdef ENABLE_SUFFIX
   ALLFBCFLAGS += -d 'ENABLE_SUFFIX="$(ENABLE_SUFFIX)"'
 endif
@@ -437,12 +462,14 @@ ifdef ENABLE_LIB64
   ALLFBCFLAGS += -d ENABLE_LIB64
 endif
 ifdef ENABLE_STRIPALL
+  ifneq ($(ENABLE_STRIPALL),0)
+    ALLFBCFLAGS += -d ENABLE_STRIPALL
+  endif
+else
+  # by default dos and windows use --strip-all
   ifneq ($(filter dos win32,$(TARGET_OS)),)
     ALLFBCFLAGS += -d ENABLE_STRIPALL
   endif
-endif
-ifdef ENABLE_SINGLELIBRARY4FB
-  ALLFBCFLAGS += -d ENABLE_SINGLELIBRARY4FB
 endif
 
 
@@ -455,9 +482,6 @@ FBC_BI  :=        $(wildcard $(srcdir)/compiler/*.bi)
 FBC_BAS := $(sort $(wildcard $(srcdir)/compiler/*.bas))
 FBC_BAS := $(patsubst $(srcdir)/compiler/%.bas,$(fbcobjdir)/%.o,$(FBC_BAS))
 
-LIBFBEx_C    := 
-LIBFBExMT_C  := 
-RTLIBEx_DIRS := $(srcdir)/rtlibEx
 # rtlib/gfxlib2 headers and modules
 RTLIB_DIRS := $(srcdir)/rtlib $(srcdir)/rtlib/$(TARGET_OS) $(srcdir)/rtlib/$(TARGET_ARCH)
 ifeq ($(TARGET_OS),cygwin)
@@ -466,15 +490,7 @@ endif
 ifneq ($(filter darwin freebsd linux netbsd openbsd solaris,$(TARGET_OS)),)
   RTLIB_DIRS += $(srcdir)/rtlib/unix
 endif
-
-ifdef ENABLE_SINGLELIBRARY4FB
-  RTLIB_DIRS += $(RTLIBEx_DIRS)
-  GFXLIB2_DIRS := $(patsubst $(srcdir)/rtlib%,$(srcdir)/gfxlib2%,$(RTLIB_DIRS))
-else
-  GFXLIB2_DIRS := $(patsubst $(srcdir)/rtlib%,$(srcdir)/gfxlib2%,$(RTLIB_DIRS),$(RTLIBEx_DIRS))
-  LIBFBEx_C := $(sort $(foreach i,$(RTLIBEx_DIRS),$(patsubst $(i)/%.c,$(libfbobjdir)/%.o,$(wildcard $(i)/*.c))))
-  LIBFBExMT_C  := $(patsubst $(libfbobjdir)/%,$(libfbmtobjdir)/%,$(LIBFBEx_C))
-endif
+GFXLIB2_DIRS := $(patsubst $(srcdir)/rtlib%,$(srcdir)/gfxlib2%,$(RTLIB_DIRS))
 
 LIBFB_H := $(sort $(foreach i,$(RTLIB_DIRS),$(wildcard $(i)/*.h)))
 LIBFB_C := $(sort $(foreach i,$(RTLIB_DIRS),$(patsubst $(i)/%.c,$(libfbobjdir)/%.o,$(wildcard $(i)/*.c))))
@@ -493,9 +509,6 @@ LIBFBGFXMT_S    := $(patsubst $(libfbgfxobjdir)/%,$(libfbgfxmtobjdir)/%,$(LIBFBG
 LIBFBGFXMTPIC_C := $(patsubst $(libfbgfxobjdir)/%,$(libfbgfxmtpicobjdir)/%,$(LIBFBGFX_C))
 
 RTL_LIBS := $(libdir)/$(FB_LDSCRIPT) $(libdir)/fbrt0.o $(libdir)/libfb.a
-ifndef ENABLE_SINGLELIBRARY4FB
-  RTL_LIBS += $(libdir)/libfbEx.a
-endif
 GFX_LIBS := $(libdir)/libfbgfx.a
 ifdef ENABLE_PIC
   RTL_LIBS += $(libdir)/fbrt0pic.o $(libdir)/libfbpic.a
@@ -503,9 +516,6 @@ ifdef ENABLE_PIC
 endif
 ifndef DISABLE_MT
   RTL_LIBS += $(libdir)/libfbmt.a
-  ifndef ENABLE_SINGLELIBRARY4FB
-    RTL_LIBS += $(libdir)/libfbExmt.a
-  endif
   GFX_LIBS += $(libdir)/libfbgfxmt.a
   ifdef ENABLE_PIC
     RTL_LIBS += $(libdir)/libfbmtpic.a
@@ -521,9 +531,6 @@ endif
 #
 
 VPATH = $(RTLIB_DIRS) $(GFXLIB2_DIRS)
-ifndef ENABLE_SINGLELIBRARY4FB
-	VPATH += $(RTLIBEx_DIRS)
-endif
 
 # We don't want to use any of make's built-in suffixes/rules
 .SUFFIXES:
@@ -607,17 +614,6 @@ $(libdir)/libfbpic.a: $(LIBFBPIC_C) | $(libdir)
 $(LIBFBPIC_C): $(libfbpicobjdir)/%.o: %.c $(LIBFB_H) | $(libfbpicobjdir)
 	$(QUIET_CC)$(CC) -fPIC $(ALLCFLAGS) -c $< -o $@
 
-$(libdir)/libfbEx.a: $(LIBFBEx_C) | $(libdir)
-ifeq ($(TARGET_OS),dos)
-  # Avoid hitting the command line length limit (the libfb.a ar command line
-  # is very long...)
-	$(QUIET_AR)$(AR) rcs $@ $(libfbobjdir)/*.o
-else
-	$(QUIET_AR)rm -f $@; $(AR) rcs $@ $^
-endif
-$(LIBFBEx_C): $(libfbobjdir)/%.o: %.c $(LIBFB_H) | $(libfbobjdir)
-	$(QUIET_CC)$(CC) $(ALLCFLAGS) -c $< -o $@
-
 $(libdir)/libfbmt.a: $(LIBFBMT_C) $(LIBFBMT_S) | $(libdir)
 ifeq ($(TARGET_OS),dos)
   # Avoid hitting the command line length limit (the libfb.a ar command line
@@ -634,18 +630,6 @@ $(LIBFBMT_C): $(libfbmtobjdir)/%.o: %.c $(LIBFB_H) | $(libfbmtobjdir)
 	$(QUIET_CC)$(CC) -DENABLE_MT $(ALLCFLAGS) -c $< -o $@
 $(LIBFBMT_S): $(libfbmtobjdir)/%.o: %.s $(LIBFB_H) | $(libfbmtobjdir)
 	$(QUIET_CPPAS)$(CC) -x assembler-with-cpp -DENABLE_MT $(ALLCFLAGS) -c $< -o $@
-
-$(libdir)/libfbExmt.a: $(LIBFBExMT_C)
-ifeq ($(TARGET_OS),dos)
-  # Avoid hitting the command line length limit (the libfb.a ar command line
-  # is very long...)
-	$(QUIET)rm -f $@
-	$(QUIET_AR)$(AR) rcs $@ $(libfbmtobjdir)/*.o
-else
-	$(QUIET_AR)rm -f $@; $(AR) rcs $@ $^
-endif
-$(LIBFBExMT_C): $(libfbmtobjdir)/%.o: %.c $(LIBFB_H) | $(libfbmtobjdir)
-	$(QUIET_CC)$(CC) -DENABLE_MT $(ALLCFLAGS) -c $< -o $@
 
 $(libdir)/libfbmtpic.a: $(LIBFBMTPIC_C) | $(libdir)
 	$(QUIET_AR)rm -f $@; $(AR) rcs $@ $^
@@ -1097,19 +1081,25 @@ bootstrap-dist:
 	# Precompile fbc sources for various targets
 	rm -rf bootstrap
 	mkdir -p bootstrap/dos
+	mkdir -p bootstrap/freebsd-x86
+	mkdir -p bootstrap/freebsd-x86_64
 	mkdir -p bootstrap/linux-x86
 	mkdir -p bootstrap/linux-x86_64
 	mkdir -p bootstrap/win32
 	mkdir -p bootstrap/win64
-	./$(FBC_EXE) src/compiler/*.bas -m fbc -i inc -e -r -v -target dos          && mv src/compiler/*.asm bootstrap/dos
-	./$(FBC_EXE) src/compiler/*.bas -m fbc -i inc -e -r -v -target linux-x86    && mv src/compiler/*.asm bootstrap/linux-x86
-	./$(FBC_EXE) src/compiler/*.bas -m fbc -i inc -e -r -v -target linux-x86_64 && mv src/compiler/*.c   bootstrap/linux-x86_64
-	./$(FBC_EXE) src/compiler/*.bas -m fbc -i inc -e -r -v -target win32        && mv src/compiler/*.asm bootstrap/win32
-	./$(FBC_EXE) src/compiler/*.bas -m fbc -i inc -e -r -v -target win64        && mv src/compiler/*.c   bootstrap/win64
+	./$(FBC_EXE) src/compiler/*.bas -m fbc -i inc -e -r -v -target dos            && mv src/compiler/*.asm bootstrap/dos
+	./$(FBC_EXE) src/compiler/*.bas -m fbc -i inc -e -r -v -target freebsd-x86    && mv src/compiler/*.asm bootstrap/freebsd-x86
+	./$(FBC_EXE) src/compiler/*.bas -m fbc -i inc -e -r -v -target freebsd-x86_64 && mv src/compiler/*.c   bootstrap/freebsd-x86_64
+	./$(FBC_EXE) src/compiler/*.bas -m fbc -i inc -e -r -v -target linux-x86      && mv src/compiler/*.asm bootstrap/linux-x86
+	./$(FBC_EXE) src/compiler/*.bas -m fbc -i inc -e -r -v -target linux-x86_64   && mv src/compiler/*.c   bootstrap/linux-x86_64
+	./$(FBC_EXE) src/compiler/*.bas -m fbc -i inc -e -r -v -target win32          && mv src/compiler/*.asm bootstrap/win32
+	./$(FBC_EXE) src/compiler/*.bas -m fbc -i inc -e -r -v -target win64          && mv src/compiler/*.c   bootstrap/win64
 
 	# Ensure to have LFs regardless of host system (LFs will probably work
 	# on DOS/Win32, but CRLFs could cause issues on Linux)
 	dos2unix bootstrap/dos/*
+	dos2unix bootstrap/freebsd-x86/*
+	dos2unix bootstrap/freebsd-x86_64/*
 	dos2unix bootstrap/linux-x86/*
 	dos2unix bootstrap/linux-x86_64/*
 	dos2unix bootstrap/win32/*

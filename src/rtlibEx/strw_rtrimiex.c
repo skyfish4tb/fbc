@@ -6,7 +6,7 @@ FBCALL FB_WCHAR *fb_WstrRTrimIEx ( const FB_WCHAR *src, const FB_WCHAR *pattern 
 {
 	FB_WCHAR 	*dst;
 	ssize_t len;
-	const FB_WCHAR *p = NULL;
+	const FB_WCHAR *p = src;
 
     if( src == NULL ) {
         return NULL;
@@ -21,7 +21,7 @@ FBCALL FB_WCHAR *fb_WstrRTrimIEx ( const FB_WCHAR *src, const FB_WCHAR *pattern 
                 p = fb_wstr_SkipCharIRev( src,
                                          len,
                                          *pattern );
-                len = (ssize_t)(p - src) + 1;
+                len = (ssize_t)(p - src) ;
 
             } else if( len_pattern != 0 ) {
                 ssize_t test_index = len - len_pattern;

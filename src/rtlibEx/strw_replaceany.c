@@ -30,12 +30,13 @@ FBCALL FB_WCHAR* fb_WstrReplaceAny(FB_WCHAR* src, FB_WCHAR* find, FB_WCHAR* repl
 	dst = fb_wstr_AllocTemp( srcLen + (replaceWithLen - 1) * srcount );
 	if( dst != NULL) {
 		Start--;
-		srcIndex = src + Start;
+		srcIndex = src;
 		afterReplaceIndex = dst;
 		if (Start >0){
 			fb_wstr_Copy(afterReplaceIndex, srcIndex,Start);
 			afterReplaceIndex += Start;
 		}
+		srcIndex += Start;
 		
 		if (fbCompareType & FB_vbTextCompare){/* Text Compare */
 				myInstr = fb_Wstrstrcasestrany;
